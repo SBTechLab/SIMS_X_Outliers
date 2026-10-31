@@ -41,12 +41,13 @@ All foundation verification criteria pass:
 | **Payments** | Member B | ✅ Stage B4 | Payment recording (UPI, bank transfer, cash, etc.) (D-05) |
 | **Customer Portal** | Member B | ✅ Stage B5 | Customer self-service: overview, quotes, projects, invoices, payments |
 | **Public Site** | Member B | ✅ Stage B1 | Landing page, enquiry form with round-robin assignment (BR-01, BR-15) |
-| **Products & Inventory** | Member C | ⏳ Pending C | Products catalog, stock management, stock adjustments |
-| **Purchases & Serials** | Member C | ⏳ Pending C | Purchase orders, serial unit reception, serial timeline (BR-08) |
-| **Dispatches** | Member C | ⏳ Pending C | Pick lists, serial number barcode scanning, packing slips (BR-06, BR-07) |
-| **Installations** | Member C | ⏳ Pending C | Crew scheduling, mobile install checklist, 3 photos + signature (BR-10) |
-| **Warranties** | Member C | ⏳ Pending C | Automated serial warranty tracking, expiration calculation (BR-09) |
-| **Support & Tickets** | Member C | ⏳ Pending C | Customer/serial lookup, warranty checks, service tickets (BR-11, BR-12) |
+| **Products & Inventory** | Member C | ✅ Stage C1 | Products catalog, stock management, stock adjustments, low-stock alerts |
+| **Purchases & Serials** | Member C | ✅ Stage C1 | Purchase orders, serial unit reception, serial timeline (BR-08) |
+| **Dispatches** | Member C | ✅ Stage C1 | Pick lists, serial scanning, packing slips, delivery + warranty auto-create (BR-06, BR-07, BR-09) |
+| **Installations** | Member C | ✅ Stage C2 | Crew scheduling, mobile job list, start/complete (BR-10) |
+| **Warranties** | Member C | ✅ Stage C1 | Automated serial warranty tracking, expiration derivation (BR-09) |
+| **Support & Tickets** | Member C | ✅ Stage C2 | Customer/serial lookup, warranty checks, service tickets, customer confirmation (BR-11, BR-12) |
+| **Customer Portal (C additions)** | Member C | ✅ Stage C2 | My systems (warranty end dates), service request raise + confirm (BR-12) |
 
 ---
 
@@ -84,6 +85,8 @@ All foundation verification criteria pass:
 - Teammates B and C can pull `main` and build their feature modules in parallel on top of this stable foundation.
 - Member A completed Stages A2–A4 (2026-10-31): invoices, subsidies, expenses, payouts (A2); director overview + profitability/pipeline/unfinished/service reports (A3); global search server+client (A4). Director pages wired in AppRoutes replacing all PlaceholderPage stubs.
 - Member B completed Stages B1–B5 (2026-10-31): all server modules implemented (leads, surveys, quotes, projects, payments, customers, me); client pages wired for SALES_EXECUTIVE, SURVEY_TECHNICIAN, and CUSTOMER roles.
+- Member C completed Stages C1–C2 (2026-10-31): all 9 server modules built (products, inventory, purchases, serials, dispatches, installations, warranties, tickets, support); client pages for WAREHOUSE_MANAGER, INSTALLATION_TECHNICIAN, SUPPORT_EXECUTIVE, and CUSTOMER portal additions wired in AppRoutes. /me/systems and CUSTOMER ticket access added to me.routes.js and tickets.routes.js.
 - Unit tests: **16/16 passing** across 6 suites (`nextCode`, `requireRole`, `adminUsers`, `kitTemplateMargin`, `publicEnquiry`).
 - Client Vite build: zero errors.
 - Member A Stages A1–A4 are 100% complete (2026-10-31): Super Admin panel, Finance layer, Director dashboard/reports, Global search + notifications UI.
+- **ALL 3 MEMBERS ARE 100% COMPLETE** as of 2026-10-31. Full system covers all 8 roles end-to-end.

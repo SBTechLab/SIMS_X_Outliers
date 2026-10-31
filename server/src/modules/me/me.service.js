@@ -121,3 +121,55 @@ export async function getMyPayments(actor) {
 
   return payments.map((p) => ({ ...p, amount: toMoneyString(p.amount) }));
 }
+
+/**
+ * Returns the customer's delivered systems with warranty info.
+ *
+ * Why: portal "My systems" page — shows each delivered solar system with warranty end dates.
+ * Flow: find customer → find delivered dispatches → include serial units + warranties.
+ * Throws: AppError 404 NOT_FOUND.
+ */
+export async function getMySystems(actor) {
+  const customer = await prisma.customer.findFirst({ where: { userId: actor.id }, select: { id: true } });
+  if (!customer) throw new AppError(404, 'NOT_FOUND', 'Customer profile not found.');
+
+  const projects = await prisma.project.findMany({
+    where: { customerId: customer.id, status: { in: ['INSTALLED', 'CLOSED'] } },
+    select: {
+      id: true, code: true, status: true, systemType: true, capacityKw: true, siteAddress: true, installedAt: true,
+      dispatches: {
+        where: { status: 'DELIVERED' },
+        select: {
+          deliveredAt: true,
+          serialUnits: {
+            select: {
+              id: true, serialNumber: true, status: true,
+              product: { select: { name: true, category: true } },
+              warranty: {
+                select: { id: true, startDate: true, endDate: true, voidReason: true },
+              },
+            },
+          },
+        },
+      },
+    },
+    orderBy: { installedAt: 'desc' },
+  });
+
+  return projects.map((p) => ({
+    ...p,
+    capacityKw: Number(p.capacityKw),
+    serialUnits: p.dispatches.flatMap((d) =>
+      d.serialUnits.map((s) => ({
+        ...s,
+        warranty: s.warranty
+          ? {
+              ...s.warranty,
+              status: s.warranty.voidReason ? 'VOID' : new Date() > new Date(s.warranty.endDate) ? 'EXPIRED' : 'ACTIVE',
+            }
+          : null,
+      }))
+    ),
+    dispatches: undefined,
+  }));
+}

@@ -1,25 +1,20 @@
 import { Router } from 'express';
 import { requireAuth } from '../../middlewares/requireAuth.js';
 import { requireRole } from '../../middlewares/requireRole.js';
-import { notImplemented } from '../../core/notImplemented.js';
+import { listTicketsHandler, getTicketHandler, createTicketHandler, assignTicketHandler, updateStatusHandler, resolveTicketHandler, confirmTicketHandler, addActivityHandler, addPartHandler } from './tickets.controller.js';
 
-/**
- * tickets — Member C. See docs/API_CONTRACTS.md for the full contract.
- *
- * Guard: SUPPORT_EXECUTIVE creates and manages tickets; INSTALLATION_TECHNICIAN
- * updates field status. CUSTOMER raises via /me/tickets.
- */
 const router = Router();
+router.use(requireAuth, requireRole('SUPER_ADMIN', 'DIRECTOR', 'SUPPORT_EXECUTIVE', 'INSTALLATION_TECHNICIAN', 'CUSTOMER'));
 
-router.use(
-  requireAuth,
-  requireRole(
-    'SUPER_ADMIN',
-    'DIRECTOR',
-    'SUPPORT_EXECUTIVE',
-    'INSTALLATION_TECHNICIAN',
-  ),
-);
-router.use(notImplemented);
+router.get('/', listTicketsHandler);
+router.post('/', requireRole('SUPER_ADMIN', 'SUPPORT_EXECUTIVE', 'CUSTOMER'), createTicketHandler);
+router.get('/:id', getTicketHandler);
+router.patch('/:id/assign', requireRole('SUPER_ADMIN', 'SUPPORT_EXECUTIVE'), assignTicketHandler);
+router.patch('/:id/status', updateStatusHandler);
+router.patch('/:id/resolve', resolveTicketHandler);
+// BR-12: customer confirms the resolution to close the ticket
+router.patch('/:id/confirm', requireRole('SUPER_ADMIN', 'SUPPORT_EXECUTIVE', 'CUSTOMER'), confirmTicketHandler);
+router.post('/:id/activities', addActivityHandler);
+router.post('/:id/parts', requireRole('SUPER_ADMIN', 'SUPPORT_EXECUTIVE', 'INSTALLATION_TECHNICIAN'), addPartHandler);
 
 export default router;

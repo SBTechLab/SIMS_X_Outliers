@@ -1,25 +1,13 @@
 import { Router } from 'express';
 import { requireAuth } from '../../middlewares/requireAuth.js';
 import { requireRole } from '../../middlewares/requireRole.js';
-import { notImplemented } from '../../core/notImplemented.js';
+import { listWarrantiesHandler, getWarrantyHandler, voidWarrantyHandler } from './warranties.controller.js';
 
-/**
- * warranties — Member C. See docs/API_CONTRACTS.md for the full contract.
- *
- * Guard: SUPPORT_EXECUTIVE checks warranty status; WAREHOUSE_MANAGER records deliveries
- * that start warranty clocks (BR-09).
- */
 const router = Router();
+router.use(requireAuth, requireRole('SUPER_ADMIN', 'DIRECTOR', 'WAREHOUSE_MANAGER', 'SUPPORT_EXECUTIVE'));
 
-router.use(
-  requireAuth,
-  requireRole(
-    'SUPER_ADMIN',
-    'DIRECTOR',
-    'WAREHOUSE_MANAGER',
-    'SUPPORT_EXECUTIVE',
-  ),
-);
-router.use(notImplemented);
+router.get('/', listWarrantiesHandler);
+router.get('/:id', getWarrantyHandler);
+router.patch('/:id/void', requireRole('SUPER_ADMIN', 'SUPPORT_EXECUTIVE'), voidWarrantyHandler);
 
 export default router;

@@ -1,16 +1,15 @@
 import { Router } from 'express';
 import { requireAuth } from '../../middlewares/requireAuth.js';
 import { requireRole } from '../../middlewares/requireRole.js';
-import { notImplemented } from '../../core/notImplemented.js';
+import { listPurchasesHandler, getPurchaseHandler, createPurchaseHandler, listSuppliersHandler, createSupplierHandler } from './purchases.controller.js';
 
-/**
- * purchases — Member C. See docs/API_CONTRACTS.md for the full contract.
- *
- * Guard: WAREHOUSE_MANAGER records GRNs; DIRECTOR views for cost tracking.
- */
 const router = Router();
-
 router.use(requireAuth, requireRole('SUPER_ADMIN', 'DIRECTOR', 'WAREHOUSE_MANAGER'));
-router.use(notImplemented);
+
+router.get('/suppliers', listSuppliersHandler);
+router.post('/suppliers', requireRole('SUPER_ADMIN', 'WAREHOUSE_MANAGER'), createSupplierHandler);
+router.get('/', listPurchasesHandler);
+router.post('/', requireRole('SUPER_ADMIN', 'WAREHOUSE_MANAGER'), createPurchaseHandler);
+router.get('/:id', getPurchaseHandler);
 
 export default router;

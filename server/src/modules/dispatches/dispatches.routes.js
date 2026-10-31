@@ -1,16 +1,18 @@
 import { Router } from 'express';
 import { requireAuth } from '../../middlewares/requireAuth.js';
 import { requireRole } from '../../middlewares/requireRole.js';
-import { notImplemented } from '../../core/notImplemented.js';
+import { listDispatchesHandler, getDispatchHandler, startPackingHandler, scanSerialHandler, packLineHandler, markReadyHandler, dispatchGoodsHandler, recordDeliveryHandler } from './dispatches.controller.js';
 
-/**
- * dispatches — Member C. See docs/API_CONTRACTS.md for the full contract.
- *
- * Guard: WAREHOUSE_MANAGER scans and dispatches (BR-07).
- */
 const router = Router();
-
 router.use(requireAuth, requireRole('SUPER_ADMIN', 'DIRECTOR', 'WAREHOUSE_MANAGER'));
-router.use(notImplemented);
+
+router.get('/', listDispatchesHandler);
+router.get('/:id', getDispatchHandler);
+router.patch('/:id/pack', startPackingHandler);
+router.post('/:id/scan', scanSerialHandler);
+router.patch('/:id/lines/:lineId/packed', packLineHandler);
+router.patch('/:id/ready', markReadyHandler);
+router.patch('/:id/dispatch', dispatchGoodsHandler);
+router.patch('/:id/deliver', recordDeliveryHandler);
 
 export default router;

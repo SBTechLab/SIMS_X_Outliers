@@ -44,6 +44,9 @@ import { PortalOverviewPage } from '@/features/customer-portal/pages/PortalOverv
 import { PortalProjectsPage } from '@/features/customer-portal/pages/PortalProjectsPage.jsx';
 import { PortalQuotesPage } from '@/features/customer-portal/pages/PortalQuotesPage.jsx';
 import { PortalInvoicesPage } from '@/features/customer-portal/pages/PortalInvoicesPage.jsx';
+// Member C: Customer portal additions
+import { PortalSystemsPage } from '@/features/customer-portal/pages/PortalSystemsPage.jsx';
+import { PortalTicketsPage } from '@/features/customer-portal/pages/PortalTicketsPage.jsx';
 
 // Member A: Director (Stages A2-A3)
 import { DirectorOverviewPage } from '@/features/director/pages/DirectorOverviewPage.jsx';
@@ -58,6 +61,24 @@ import { ServiceReportPage } from '@/features/director/pages/ServiceReportPage.j
 
 // Member A: Notifications (Stage A4)
 import { NotificationsPage } from '@/features/notifications/NotificationsPage.jsx';
+
+// Member C: Warehouse
+import { WarehouseDashboardPage } from '@/features/warehouse/pages/WarehouseDashboardPage.jsx';
+import { ProductsPage } from '@/features/warehouse/pages/ProductsPage.jsx';
+import { InventoryPage } from '@/features/warehouse/pages/InventoryPage.jsx';
+import { PurchasesPage } from '@/features/warehouse/pages/PurchasesPage.jsx';
+import { SerialsPage } from '@/features/warehouse/pages/SerialsPage.jsx';
+import { DispatchesPage } from '@/features/warehouse/pages/DispatchesPage.jsx';
+import { DispatchDetailPage } from '@/features/warehouse/pages/DispatchDetailPage.jsx';
+import { InstallSchedulePage } from '@/features/warehouse/pages/InstallSchedulePage.jsx';
+// Member C: Installation technician
+import { MyJobsPage } from '@/features/installation/pages/MyJobsPage.jsx';
+import { MyTicketsPage } from '@/features/installation/pages/MyTicketsPage.jsx';
+// Member C: Support executive
+import { SupportDashboardPage } from '@/features/support/pages/SupportDashboardPage.jsx';
+import { LookupPage } from '@/features/support/pages/LookupPage.jsx';
+import { TicketsPage } from '@/features/support/pages/TicketsPage.jsx';
+import { WarrantiesPage } from '@/features/support/pages/WarrantiesPage.jsx';
 
 /**
  * SHARED FILE (docs/AGENTS.md section 5).
@@ -145,8 +166,8 @@ export function AppRoutes() {
             <Route path="/portal/projects" element={<PortalProjectsPage />} />
             <Route path="/portal/quotes" element={<PortalQuotesPage />} />
             <Route path="/portal/invoices" element={<PortalInvoicesPage />} />
-            <Route path="/portal/systems" element={<PlaceholderPage title="My systems" subtitle="Every unit on your rooftop, with its warranty end date (BR-09)." module="Systems" owner="Member C" />} />
-            <Route path="/portal/tickets" element={<PlaceholderPage title="Service" subtitle="Raise a ticket, track the fix, confirm when it works (BR-12)." module="Tickets" owner="Member C" />} />
+            <Route path="/portal/systems" element={<PortalSystemsPage />} />
+            <Route path="/portal/tickets" element={<PortalTicketsPage />} />
             <Route path="/portal/profile" element={<PlaceholderPage title="Profile" module="Profile" owner="Member A" />} />
           </Route>
         </Route>
@@ -154,31 +175,32 @@ export function AppRoutes() {
         {/* --- Member C: WAREHOUSE_MANAGER ------------------------------ */}
         <Route element={<RoleRoute roles={['WAREHOUSE_MANAGER']} />}>
           <Route element={<AppLayout />}>
-            <Route path="/warehouse" element={<PlaceholderPage breadcrumb={[{ label: 'Warehouse' }]} title="Warehouse" subtitle="Dispatches to pack, low stock, installation schedule." module="Warehouse dashboard" owner="Member C" />} />
-            <Route path="/warehouse/products" element={<PlaceholderPage breadcrumb={[{ label: 'Warehouse' }, { label: 'Products' }]} title="Products" module="Products" owner="Member C" />} />
-            <Route path="/warehouse/inventory" element={<PlaceholderPage breadcrumb={[{ label: 'Warehouse' }, { label: 'Inventory' }]} title="Inventory" module="Inventory" owner="Member C" />} />
-            <Route path="/warehouse/purchases" element={<PlaceholderPage breadcrumb={[{ label: 'Warehouse' }, { label: 'Purchases' }]} title="Purchases" subtitle="Record purchases and the serial numbers they bring in." module="Purchases" owner="Member C" />} />
-            <Route path="/warehouse/serials" element={<PlaceholderPage breadcrumb={[{ label: 'Warehouse' }, { label: 'Serials' }]} title="Serial numbers" subtitle="Full history for every unit — purchase, dispatch, delivery, tickets (BR-08)." module="Serials" owner="Member C" />} />
-            <Route path="/warehouse/dispatches" element={<PlaceholderPage breadcrumb={[{ label: 'Warehouse' }, { label: 'Dispatches' }]} title="Dispatches" subtitle="Scan every serialized unit before dispatch (BR-07)." module="Dispatches" owner="Member C" />} />
-            <Route path="/warehouse/installations" element={<PlaceholderPage breadcrumb={[{ label: 'Warehouse' }, { label: 'Install schedule' }]} title="Installation schedule" subtitle="Pick a date and a crew for every delivered project." module="Install scheduling" owner="Member C" />} />
+            <Route path="/warehouse" element={<WarehouseDashboardPage />} />
+            <Route path="/warehouse/products" element={<ProductsPage />} />
+            <Route path="/warehouse/inventory" element={<InventoryPage />} />
+            <Route path="/warehouse/purchases" element={<PurchasesPage />} />
+            <Route path="/warehouse/serials" element={<SerialsPage />} />
+            <Route path="/warehouse/dispatches" element={<DispatchesPage />} />
+            <Route path="/warehouse/dispatches/:id" element={<DispatchDetailPage />} />
+            <Route path="/warehouse/installations" element={<InstallSchedulePage />} />
           </Route>
         </Route>
 
         {/* --- Member C: INSTALLATION_TECHNICIAN ------------------------ */}
         <Route element={<RoleRoute roles={['INSTALLATION_TECHNICIAN']} />}>
           <Route element={<FieldLayout title="My jobs" />}>
-            <Route path="/field/jobs" element={<PlaceholderPage title="My jobs" subtitle="Today's assigned installations and service visits." module="Installation (field)" owner="Member C" />} />
-            <Route path="/field/tickets" element={<PlaceholderPage title="My tickets" subtitle="Assigned service tickets." module="Field tickets" owner="Member C" />} />
+            <Route path="/field/jobs" element={<MyJobsPage />} />
+            <Route path="/field/tickets" element={<MyTicketsPage />} />
           </Route>
         </Route>
 
         {/* --- Member C: SUPPORT_EXECUTIVE ------------------------------ */}
         <Route element={<RoleRoute roles={['SUPPORT_EXECUTIVE']} />}>
           <Route element={<AppLayout />}>
-            <Route path="/support" element={<PlaceholderPage breadcrumb={[{ label: 'Support' }]} title="Support" subtitle="Find a customer, raise a ticket, decide chargeable vs. free (BR-11)." module="Support dashboard" owner="Member C" />} />
-            <Route path="/support/lookup" element={<PlaceholderPage breadcrumb={[{ label: 'Support' }, { label: 'Lookup' }]} title="Lookup" subtitle="Phone, name, serial or project code — one query, one answer (US-E1)." module="Lookup" owner="Member C" />} />
-            <Route path="/support/tickets" element={<PlaceholderPage breadcrumb={[{ label: 'Support' }, { label: 'Tickets' }]} title="Tickets" module="Tickets" owner="Member C" />} />
-            <Route path="/support/warranties" element={<PlaceholderPage breadcrumb={[{ label: 'Support' }, { label: 'Warranties' }]} title="Warranties" subtitle="Active, expired, void — status is derived from the end date (D-11)." module="Warranties" owner="Member C" />} />
+            <Route path="/support" element={<SupportDashboardPage />} />
+            <Route path="/support/lookup" element={<LookupPage />} />
+            <Route path="/support/tickets" element={<TicketsPage />} />
+            <Route path="/support/warranties" element={<WarrantiesPage />} />
             <Route path="/support/customers" element={<PlaceholderPage breadcrumb={[{ label: 'Support' }, { label: 'Customers' }]} title="Customers" module="Customers" owner="Member B" />} />
           </Route>
         </Route>

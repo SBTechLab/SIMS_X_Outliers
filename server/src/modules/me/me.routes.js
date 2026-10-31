@@ -15,5 +15,6 @@ router.get('/projects', asyncHandler(ctrl.getMyProjects));
 router.get('/quotes', asyncHandler(ctrl.getMyQuotes));
 router.get('/invoices', asyncHandler(ctrl.getMyInvoices));
 router.get('/payments', asyncHandler(ctrl.getMyPayments));
+router.get('/systems', asyncHandler(ctrl.getMySystems));
 
 export default router;

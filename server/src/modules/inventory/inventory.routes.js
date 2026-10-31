@@ -1,16 +1,12 @@
 import { Router } from 'express';
 import { requireAuth } from '../../middlewares/requireAuth.js';
 import { requireRole } from '../../middlewares/requireRole.js';
-import { notImplemented } from '../../core/notImplemented.js';
+import { getInventoryHandler, getLowStockHandler } from './inventory.controller.js';
 
-/**
- * inventory — Member C. See docs/API_CONTRACTS.md for the full contract.
- *
- * Guard: WAREHOUSE_MANAGER manages stock levels.
- */
 const router = Router();
-
 router.use(requireAuth, requireRole('SUPER_ADMIN', 'DIRECTOR', 'WAREHOUSE_MANAGER'));
-router.use(notImplemented);
+
+router.get('/', getInventoryHandler);
+router.get('/low-stock', getLowStockHandler);
 
 export default router;

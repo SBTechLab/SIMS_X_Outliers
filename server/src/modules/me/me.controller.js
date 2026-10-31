@@ -25,3 +25,8 @@ export async function getMyPayments(req, res) {
   const payments = await service.getMyPayments(req.user);
   return ok(res, { payments });
 }
+
+export async function getMySystems(req, res) {
+  const systems = await service.getMySystems(req.user);
+  return ok(res, { systems });
+}
