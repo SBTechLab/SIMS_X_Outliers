@@ -10,7 +10,7 @@
  *   API_URL=http://localhost:5000/api/v1 node server/scripts/smoke.js
  */
 
-const BASE_URL = process.env.API_URL || 'http://localhost:5000/api/v1';
+const BASE_URL = process.env.API_URL || 'http://localhost:5001/api/v1';
 const PASSWORD = 'Demo@1234';
 
 const ROLES_TO_TEST = [

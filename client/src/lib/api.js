@@ -18,7 +18,7 @@ export class ApiError extends Error {
  * Authorization header anywhere in this client.
  */
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api/v1',
+  baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:5001/api/v1',
   withCredentials: true,
   timeout: 30000,
   headers: { 'Content-Type': 'application/json' },
@@ -89,7 +89,7 @@ api.interceptors.response.use(
       return Promise.reject(
         new ApiError({
           code: 'NETWORK_ERROR',
-          message: 'Cannot reach the server. Check that it is running on port 5000.',
+          message: 'Cannot reach the server. Check that it is running on port 5001.',
           status: 0,
         }),
       );
