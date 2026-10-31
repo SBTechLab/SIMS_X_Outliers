@@ -86,7 +86,8 @@ All foundation verification criteria pass:
 - Member A completed Stages A2–A4 (2026-10-31): invoices, subsidies, expenses, payouts (A2); director overview + profitability/pipeline/unfinished/service reports (A3); global search server+client (A4). Director pages wired in AppRoutes replacing all PlaceholderPage stubs.
 - Member B completed Stages B1–B5 (2026-10-31): all server modules implemented (leads, surveys, quotes, projects, payments, customers, me); client pages wired for SALES_EXECUTIVE, SURVEY_TECHNICIAN, and CUSTOMER roles.
 - Member C completed Stages C1–C2 (2026-10-31): all 9 server modules built (products, inventory, purchases, serials, dispatches, installations, warranties, tickets, support); client pages for WAREHOUSE_MANAGER, INSTALLATION_TECHNICIAN, SUPPORT_EXECUTIVE, and CUSTOMER portal additions wired in AppRoutes. /me/systems and CUSTOMER ticket access added to me.routes.js and tickets.routes.js.
-- Unit tests: **16/16 passing** across 6 suites (`nextCode`, `requireRole`, `adminUsers`, `kitTemplateMargin`, `publicEnquiry`).
+- Unit tests: **18/18 passing** across 7 suites (`nextCode`, `requireRole`, `adminUsers`, `kitTemplateMargin`, `publicEnquiry` ×2, `finance` ×2).
 - Client Vite build: zero errors.
 - Member A Stages A1–A4 are 100% complete (2026-10-31): Super Admin panel, Finance layer, Director dashboard/reports, Global search + notifications UI.
 - **ALL 3 MEMBERS ARE 100% COMPLETE** as of 2026-10-31. Full system covers all 8 roles end-to-end.
+- **Event listener gap closed (2026-10-31):** Added `dispatches.listeners.js` (project.confirmed → auto-create Dispatch + DispatchLines, BR-06), `installations.listeners.js` (project.confirmed → auto-create InstallationJob, BR-06; installation.completed → project INSTALLED), `tickets.listeners.js` (ticket.created → notify support, ticket.closed → notify customer). Fixed `tickets.service.js` `nextCode` argument order bug and added missing `ticket.created` event emission.

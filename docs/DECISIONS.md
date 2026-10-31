@@ -300,3 +300,15 @@ already a CSS variable. Not now.
 **Alternatives.** (a) Customer at lead time — clean, but creates many orphan customers. (b) Explicit API call from frontend — leaks business logic to the client.
 
 ---
+
+## D-17 — Event listeners close the BR-06 loop (dispatch + install on confirmation)
+
+**Date:** 2026-10-31 · **Status:** accepted
+
+**Decision.** Three listener files added: `dispatches.listeners.js` (project.confirmed → auto-create Dispatch + DispatchLines from quote items), `installations.listeners.js` (project.confirmed → auto-create unscheduled InstallationJob; installation.completed → set project INSTALLED), `tickets.listeners.js` (ticket.created → notify support; ticket.closed → notify customer). All are idempotent — they check for an existing row before creating.
+
+**Why.** BR-06 requires "on order confirmation the system auto-creates a dispatch pick list and an unscheduled installation job." The modules existed but had no listeners wired to the event bus, so confirming a project did nothing downstream. Also fixed: `tickets.service.js` had `nextCode(tx, 'TKT')` (args swapped) and did not emit `ticket.created`.
+
+**Alternatives.** (a) Inline creation in `confirmProject` — couples projects to dispatch/installation schemas and violates the event-bus architecture (D-02). (b) Manual creation from warehouse UI — loses the automation promise.
+
+---

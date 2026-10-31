@@ -100,7 +100,7 @@ export async function createTicket(data, userId) {
   }
 
   return prisma.$transaction(async (tx) => {
-    const number = await nextCode(tx, 'TKT');
+    const number = await nextCode('TKT', tx);
     const ticket = await tx.ticket.create({
       data: {
         number,
@@ -129,6 +129,9 @@ export async function createTicket(data, userId) {
       },
     });
 
+    return ticket;
+  }).then((ticket) => {
+    emitEvent('ticket.created', { ticketId: ticket.id });
     return ticket;
   });
 }
