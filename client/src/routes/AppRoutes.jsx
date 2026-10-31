@@ -45,6 +45,16 @@ import { PortalProjectsPage } from '@/features/customer-portal/pages/PortalProje
 import { PortalQuotesPage } from '@/features/customer-portal/pages/PortalQuotesPage.jsx';
 import { PortalInvoicesPage } from '@/features/customer-portal/pages/PortalInvoicesPage.jsx';
 
+// Member A: Director (Stages A2-A3)
+import { DirectorOverviewPage } from '@/features/director/pages/DirectorOverviewPage.jsx';
+import { ProfitabilityPage } from '@/features/director/pages/ProfitabilityPage.jsx';
+import { InvoicesPage } from '@/features/director/pages/InvoicesPage.jsx';
+import { SubsidiesPage } from '@/features/director/pages/SubsidiesPage.jsx';
+import { ExpensesPage } from '@/features/director/pages/ExpensesPage.jsx';
+import { PayoutsPage } from '@/features/director/pages/PayoutsPage.jsx';
+import { UnfinishedPage } from '@/features/director/pages/UnfinishedPage.jsx';
+import { ServiceReportPage } from '@/features/director/pages/ServiceReportPage.jsx';
+
 /**
  * SHARED FILE (docs/AGENTS.md section 5).
  * Add your routes inside your own member's fence; never rename or delete another member's lines.
@@ -84,16 +94,16 @@ export function AppRoutes() {
         </Route>
 
         {/* --- Member A: DIRECTOR --------------------------------------- */}
-        <Route element={<RoleRoute roles={['DIRECTOR']} />}>
+        <Route element={<RoleRoute roles={['DIRECTOR', 'SUPER_ADMIN']} />}>
           <Route element={<AppLayout />}>
-            <Route path="/director" element={<PlaceholderPage breadcrumb={[{ label: 'Director' }]} title="Overview" subtitle="Today, this week, this month, with previous-period deltas." module="Director overview" owner="Member A" />} />
-            <Route path="/director/profitability" element={<PlaceholderPage breadcrumb={[{ to: '/director', label: 'Director' }, { label: 'Profitability' }]} title="Profitability" subtitle="Revenue minus material, labour, expenses and warranty service cost (BR-13)." module="Profitability" owner="Member A" />} />
-            <Route path="/director/unfinished" element={<PlaceholderPage breadcrumb={[{ to: '/director', label: 'Director' }, { label: 'Unfinished work' }]} title="Unfinished work" module="Unfinished report" owner="Member A" />} />
-            <Route path="/director/service" element={<PlaceholderPage breadcrumb={[{ to: '/director', label: 'Director' }, { label: 'Service' }]} title="Service report" module="Service report" owner="Member A" />} />
-            <Route path="/director/invoices" element={<PlaceholderPage breadcrumb={[{ to: '/director', label: 'Director' }, { label: 'Invoices' }]} title="Invoices" module="Invoices" owner="Member A" />} />
-            <Route path="/director/subsidies" element={<PlaceholderPage breadcrumb={[{ to: '/director', label: 'Director' }, { label: 'Subsidies' }]} title="Subsidies" subtitle="PM Surya Ghar paperwork, by hand (out of scope: real portal)." module="Subsidies" owner="Member A" />} />
-            <Route path="/director/expenses" element={<PlaceholderPage breadcrumb={[{ to: '/director', label: 'Director' }, { label: 'Expenses' }]} title="Expenses" module="Expenses" owner="Member A" />} />
-            <Route path="/director/payouts" element={<PlaceholderPage breadcrumb={[{ to: '/director', label: 'Director' }, { label: 'Payouts' }]} title="Technician payouts" subtitle="Approved TimeLog minutes × hourlyRate + incentive." module="Payouts" owner="Member A" />} />
+            <Route path="/director" element={<DirectorOverviewPage />} />
+            <Route path="/director/profitability" element={<ProfitabilityPage />} />
+            <Route path="/director/unfinished" element={<UnfinishedPage />} />
+            <Route path="/director/service" element={<ServiceReportPage />} />
+            <Route path="/director/invoices" element={<InvoicesPage />} />
+            <Route path="/director/subsidies" element={<SubsidiesPage />} />
+            <Route path="/director/expenses" element={<ExpensesPage />} />
+            <Route path="/director/payouts" element={<PayoutsPage />} />
           </Route>
         </Route>
 

@@ -27,13 +27,13 @@ All foundation verification criteria pass:
 | **Users** | Member A | ✅ Complete | User CRUD, role management, password reset, technician hourly rates, self-disable guard |
 | **Kit Templates** | Member A | ✅ Complete | Standard solar packages, BOM builder, live margin calculation, off-grid checks |
 | **Audit Logs** | Member A | ✅ Complete | Immutable security audit log, 2-column before/after state diff viewer |
-| **Invoices** | Member A | ⏳ Stage A2 | Event-driven invoice generation, PDF export, payment sync |
-| **Subsidies** | Member A | ⏳ Stage A2 | PM Surya Ghar subsidy tracker, document uploads, days-in-stage |
-| **Expenses** | Member A | ⏳ Stage A2 | Project and ticket expenses recording |
-| **Payouts** | Member A | ⏳ Stage A2 | Technician approved hours aggregation and payout generation |
-| **Reports & Dashboard** | Member A | ⏳ Stage A3 | Profitability, pipeline, unfinished jobs, service reports, CSV/PDF/Share |
-| **Global Search** | Member A | ⏳ Stage A4 | Role-scoped Ctrl+K global search |
-| **Notifications** | Member A | ⏳ Stage A4 | In-app notification center, polling & full page |
+| **Invoices** | Member A | ✅ Stage A2 | Event-driven invoice generation (PROFORMA→TAX→SERVICE), payment sync via listeners |
+| **Subsidies** | Member A | ✅ Stage A2 | PM Surya Ghar subsidy tracker, status transitions, days-in-stage |
+| **Expenses** | Member A | ✅ Stage A2 | Project and ticket expenses recording (feeds BR-13) |
+| **Payouts** | Member A | ✅ Stage A2 | Technician approved hours aggregation and payout generation (DRAFT→APPROVED→PAID) |
+| **Reports & Dashboard** | Member A | ✅ Stage A3 | Director overview, profitability (BR-13), pipeline, unfinished jobs, service reports |
+| **Global Search** | Member A | ✅ Stage A4 | Role-scoped global search (server + client wired) |
+| **Notifications** | Member A | ⏳ Stage A4 | In-app notification center UI (server-side notify.js complete; client UI pending) |
 | **Leads & CRM** | Member B | ✅ Stage B2 | Sales inbox, qualification, overdue leads (BR-01, BR-02) |
 | **Surveys** | Member B | ✅ Stage B3 | Survey scheduling, technician mobile submission, approval (BR-03) |
 | **Quotes** | Member B | ✅ Stage B4 | Auto BOM quote builder, send, accept/reject (BR-04) |
@@ -82,7 +82,8 @@ All foundation verification criteria pass:
 ## 5. Next Steps for Team
 
 - Teammates B and C can pull `main` and build their feature modules in parallel on top of this stable foundation.
-- Member A can proceed to Stage A2 (Finance layer: invoices, subsidies, payouts, expenses) or Stage A3 (Director dashboard).
-- Member B completed Stages B1–B5 (2026-10-31): all server modules implemented (leads, surveys, quotes, projects, payments, customers, me); client pages wired for SALES_EXECUTIVE, SURVEY_TECHNICIAN, and CUSTOMER roles; 16/16 tests passing.
+- Member A completed Stages A2–A4 (2026-10-31): invoices, subsidies, expenses, payouts (A2); director overview + profitability/pipeline/unfinished/service reports (A3); global search server+client (A4). Director pages wired in AppRoutes replacing all PlaceholderPage stubs.
+- Member B completed Stages B1–B5 (2026-10-31): all server modules implemented (leads, surveys, quotes, projects, payments, customers, me); client pages wired for SALES_EXECUTIVE, SURVEY_TECHNICIAN, and CUSTOMER roles.
 - Unit tests: **16/16 passing** across 6 suites (`nextCode`, `requireRole`, `adminUsers`, `kitTemplateMargin`, `publicEnquiry`).
 - Client Vite build: zero errors.
+- Member A remaining: notifications UI (Stage A4 client), `/director/profitability/:id` detail page.

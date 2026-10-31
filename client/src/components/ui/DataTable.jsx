@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/cn.js';
 import { Skeleton } from './Skeleton.jsx';
+import { Pagination } from './Pagination.jsx';
 import { listContainer, listItem, STAGGER_LIMIT } from '@/lib/motion.js';
 
 /**
@@ -21,28 +22,35 @@ import { listContainer, listItem, STAGGER_LIMIT } from '@/lib/motion.js';
 export function DataTable({
   columns,
   rows,
+  data,
   loading,
   empty,
+  emptyMessage,
   onRowClick,
   sort,
   onSortChange,
+  pagination,
   rowKey = 'id',
   stickyHeader = false,
   dense = false,
   className,
 }) {
+  const tableRows = rows ?? data ?? [];
   const key = (row, i) => (typeof rowKey === 'function' ? rowKey(row) : row[rowKey] ?? i);
 
-  const primaryColumn = useMemo(() => columns.find((c) => c.primary) ?? columns[0], [columns]);
+  const primaryColumn = useMemo(
+    () => columns.find((c) => c.primary) ?? columns[0] ?? { key: 'id', label: 'Item' },
+    [columns],
+  );
 
   if (loading) {
     return <Skeleton variant="table" rows={6} columns={columns.map((c) => c.width ?? 20)} />;
   }
 
-  if (!rows || rows.length === 0) {
+  if (!tableRows || tableRows.length === 0) {
     return (
       <div className={cn('overflow-hidden rounded-card border border-line bg-surface', className)}>
-        {empty}
+        {empty ?? (emptyMessage ? <div className="p-8 text-center text-muted">{emptyMessage}</div> : null)}
       </div>
     );
   }
@@ -71,7 +79,7 @@ export function DataTable({
             </tr>
           </thead>
           <motion.tbody {...listContainer}>
-            {rows.map((row, i) => (
+            {tableRows.map((row, i) => (
               <motion.tr
                 key={key(row, i)}
                 {...(i < STAGGER_LIMIT ? listItem : {})}
@@ -115,7 +123,7 @@ export function DataTable({
 
       {/* Mobile: stacked cards. */}
       <motion.ul {...listContainer} className="divide-y divide-line md:hidden">
-        {rows.map((row, i) => (
+        {tableRows.map((row, i) => (
           <motion.li
             key={key(row, i)}
             {...(i < STAGGER_LIMIT ? listItem : {})}
@@ -151,13 +159,22 @@ export function DataTable({
           </motion.li>
         ))}
       </motion.ul>
+
+      {pagination && (
+        <Pagination
+          page={pagination.page}
+          pageSize={pagination.pageSize}
+          total={pagination.total}
+          onPageChange={pagination.onPageChange ?? pagination.onChange}
+        />
+      )}
     </div>
   );
 }
 
 function HeaderCell({ col, sort, onSortChange, dense }) {
   const sortable = Boolean(col.sortKey && onSortChange);
-  const activeDir = sort?.key === col.sortKey ? sort.direction : null;
+  const activeDir = col.sortKey && sort?.key === col.sortKey ? sort?.direction : null;
 
   const content = (
     <span
@@ -196,7 +213,7 @@ function HeaderCell({ col, sort, onSortChange, dense }) {
           type="button"
           onClick={() => {
             const next =
-              sort?.key === col.sortKey && sort?.direction === 'asc' ? 'desc' : 'asc';
+              col.sortKey && sort?.key === col.sortKey && sort?.direction === 'asc' ? 'desc' : 'asc';
             onSortChange({ key: col.sortKey, direction: next });
           }}
           className="inline-flex items-center gap-1 rounded-input focus-visible:ring-2 focus-visible:ring-sun focus-visible:ring-offset-2"
@@ -209,4 +226,3 @@ function HeaderCell({ col, sort, onSortChange, dense }) {
     </th>
   );
 }
-
