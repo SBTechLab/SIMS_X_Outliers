@@ -34,13 +34,13 @@ All foundation verification criteria pass:
 | **Reports & Dashboard** | Member A | ⏳ Stage A3 | Profitability, pipeline, unfinished jobs, service reports, CSV/PDF/Share |
 | **Global Search** | Member A | ⏳ Stage A4 | Role-scoped Ctrl+K global search |
 | **Notifications** | Member A | ⏳ Stage A4 | In-app notification center, polling & full page |
-| **Leads & CRM** | Member B | ⏳ Pending B | Sales inbox, qualification, overdue leads (BR-01, BR-02) |
-| **Surveys** | Member B | ⏳ Pending B | Survey scheduling, technician mobile submission, approval (BR-03) |
-| **Quotes** | Member B | ⏳ Pending B | Auto BOM quote builder, send, accept/reject, PDF (BR-04) |
-| **Projects** | Member B | ⏳ Pending B | Project lifecycle, timeline, order confirmation (BR-05) |
-| **Payments** | Member B | ⏳ Pending B | Payment recording (UPI, bank transfer, cash, etc.) (D-05) |
-| **Customer Portal** | Member B | ⏳ Pending B | Customer self-service: quotes, projects, payments, warranties |
-| **Public Site** | Member B | ⏳ Pending B | Landing page, enquiry form, package calculator |
+| **Leads & CRM** | Member B | ⏳ Stage B2 | Sales inbox, qualification, overdue leads (BR-01, BR-02) |
+| **Surveys** | Member B | ⏳ Stage B3 | Survey scheduling, technician mobile submission, approval (BR-03) |
+| **Quotes** | Member B | ⏳ Stage B4 | Auto BOM quote builder, send, accept/reject, PDF (BR-04) |
+| **Projects** | Member B | ⏳ Stage B4 | Project lifecycle, timeline, order confirmation (BR-05) |
+| **Payments** | Member B | ⏳ Stage B4 | Payment recording (UPI, bank transfer, cash, etc.) (D-05) |
+| **Customer Portal** | Member B | ⏳ Stage B5 | Customer self-service: quotes, projects, payments, warranties |
+| **Public Site** | Member B | ✅ Stage B1 | Landing page, enquiry form with round-robin assignment (BR-01, BR-15) |
 | **Products & Inventory** | Member C | ⏳ Pending C | Products catalog, stock management, stock adjustments |
 | **Purchases & Serials** | Member C | ⏳ Pending C | Purchase orders, serial unit reception, serial timeline (BR-08) |
 | **Dispatches** | Member C | ⏳ Pending C | Pick lists, serial number barcode scanning, packing slips (BR-06, BR-07) |
@@ -83,3 +83,5 @@ All foundation verification criteria pass:
 
 - Teammates B and C can pull `main` and build their feature modules in parallel on top of this stable foundation.
 - Member A can proceed to Stage A2 (Finance layer: invoices, subsidies, payouts, expenses) or Stage A3 (Director dashboard).
+- Member B completed Stage B1 (2026-10-31): public site is live; round-robin assignment implemented; 5 new tests passing (16/16 total). Next: Stage B2 — full leads module.
+- Unit tests: **16/16 passing** across 5 suites (`nextCode`, `requireRole`, `adminUsers`, `kitTemplateMargin`, `publicEnquiry`).

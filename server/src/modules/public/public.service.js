@@ -54,12 +54,52 @@ export async function getStats() {
 }
 
 /**
+ * Picks the active SALES_EXECUTIVE with the fewest open (non-LOST) leads.
+ *
+ * Why: BR-15 round-robin — new web-form leads are distributed evenly so no single
+ *      executive accumulates backlog while others sit idle.
+ * Flow: count non-LOST leads per active SALES_EXECUTIVE -> return the id with the lowest
+ *       count. Falls back to null when no executives exist (prevents a crash during setup).
+ * Throws: nothing — absence of executives is silently tolerated.
+ */
+async function pickRoundRobinAssignee(tx) {
+  const executives = await tx.user.findMany({
+    where: { role: 'SALES_EXECUTIVE', isActive: true },
+    select: { id: true },
+  });
+  if (executives.length === 0) return null;
+
+  const counts = await tx.lead.groupBy({
+    by: ['assignedToId'],
+    where: {
+      assignedToId: { in: executives.map((e) => e.id) },
+      status: { not: 'LOST' },
+    },
+    _count: { id: true },
+  });
+
+  const tally = new Map(executives.map((e) => [e.id, 0]));
+  for (const row of counts) {
+    if (row.assignedToId) tally.set(row.assignedToId, row._count.id);
+  }
+
+  let minCount = Infinity;
+  let chosen = executives[0].id;
+  for (const [id, count] of tally) {
+    if (count < minCount) { minCount = count; chosen = id; }
+  }
+  return chosen;
+}
+
+/**
  * Creates a lead from the public enquiry form.
  *
  * Why: this is the one unauthenticated write in the system. BR-01 — a repeat phone number is
  *      flagged and linked via duplicateOfId, never rejected, so an enquiry can never vanish.
- * Flow: inside a transaction, look up the earliest matching lead by phone -> generate the
- *       code -> create the lead -> emit lead.created after the commit.
+ *      BR-15 — the lead is round-robin assigned to the SALES_EXECUTIVE with fewest open leads.
+ * Flow: inside a transaction, look up the earliest matching lead by phone -> pick the least-
+ *       loaded sales executive -> generate the code -> create the lead -> emit lead.created
+ *       after the commit.
  * Example:
  *   await createPublicEnquiry({ name: "Ramesh Yadav", phone: "9701234567", ... })
  *   // → { code: "ENQ-2026-0042" }
@@ -73,6 +113,7 @@ export async function createPublicEnquiry(data) {
       select: { id: true },
     });
 
+    const assignedToId = await pickRoundRobinAssignee(tx);
     const code = await nextCode('ENQ', tx);
 
     return tx.lead.create({
@@ -89,9 +130,10 @@ export async function createPublicEnquiry(data) {
         requestedCapacityKw: data.requestedCapacityKw != null ? String(data.requestedCapacityKw) : null,
         wantsSubsidy: data.wantsSubsidy ?? false,
         status: 'NEW',
+        assignedToId,
         duplicateOfId: original?.id ?? null,
       },
-      select: { id: true, code: true },
+      select: { id: true, code: true, assignedToId: true },
     });
   });
 

@@ -693,3 +693,58 @@ Never `Something went wrong.` (`DESIGN.md` section 13.)
 ```
 
 **Business rules applied.** BR-04 (BOM auto-generation), BR-14 (dynamic pricing).
+
+
+---
+
+## Public enquiry (landing page + enquiry form)
+
+**What it does.** A visitor on the public landing page (`/`) can browse solar packages, read how the process works, then fill the enquiry form (`/enquire`) to request a quote. On submission a lead is created, a sales executive is assigned, and a reference code is shown.
+
+**Who uses it.** Anyone — no login required. Internally, the new lead lands in the sales inbox of the assigned `SALES_EXECUTIVE`.
+
+**Files.**
+
+| File | Job |
+|---|---|
+| `server/src/modules/public/public.routes.js` | Three unauthenticated endpoints and the rate limiter |
+| `server/src/modules/public/public.service.js` | `listPackages()`, `getStats()`, `createPublicEnquiry()` with round-robin |
+| `server/src/modules/public/public.validation.js` | zod schema for the enquiry form body |
+| `client/src/features/public-site/pages/LandingPage.jsx` | Hero, packages section, how-it-works, subsidy, CTA |
+| `client/src/features/public-site/pages/EnquiryPage.jsx` | The form and the success screen |
+| `server/tests/publicEnquiry.test.js` | Duplicate detection + round-robin tests |
+
+**Flow — `POST /public/enquiries`.**
+
+1. The rate limiter allows 5 requests per hour per IP.
+2. zod validates the body.
+3. Inside a `prisma.$transaction`:
+   - Looks up the oldest existing lead with that phone (`duplicateOfId` links to it if found — BR-01).
+   - Counts non-LOST leads per active `SALES_EXECUTIVE` and picks the one with the fewest (BR-15 round-robin).
+   - Generates the `ENQ-YYYY-NNNN` code from the `Counter` table (BR-17).
+   - Creates the lead with `assignedToId`, `duplicateOfId`, and `status: NEW`.
+4. After commit, emits `lead.created { leadId }`.
+5. Returns `{ code }` — the visitor sees their reference number.
+
+**Example request / response.**
+
+```http
+POST /api/v1/public/enquiries
+Content-Type: application/json
+
+{ "name": "Ramesh Yadav", "phone": "9701234567", "requestedSystemType": "ON_GRID",
+  "wantsSubsidy": true }
+```
+
+```json
+{ "success": true, "data": { "code": "ENQ-2026-0042" } }
+```
+
+**Business rules applied.** BR-01 (duplicate phone flagged and linked, never rejected). BR-15 (round-robin assignment to the least-loaded active sales executive). BR-17 (code from Counter inside the transaction).
+
+**Common errors.**
+
+| Code | Status | Meaning | What to do |
+|---|---|---|---|
+| `VALIDATION_ERROR` | 422 | Phone not 10 digits, or missing required field | Fix the form value |
+| `RATE_LIMITED` | 429 | More than 5 submissions in an hour from one IP | Wait and retry |

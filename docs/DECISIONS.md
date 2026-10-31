@@ -262,3 +262,17 @@ sun, where the light theme is the right choice anyway.
 
 **Alternatives.** Dark mode via a `data-theme` attribute — easy to add later since every colour is
 already a CSS variable. Not now.
+
+---
+
+## D-14 — Round-robin assignment on web enquiry, not re-assignable from form
+
+**Date:** 2026-10-31 · **Status:** accepted
+
+**Decision.** When a public enquiry is submitted, `createPublicEnquiry` finds the active `SALES_EXECUTIVE` with the fewest non-LOST leads (open count) and sets `assignedToId` inside the same transaction. The assignee is not exposed on the confirmation screen.
+
+**Why.** Equal workload distribution from the first touch. Doing it inside the transaction means the count is accurate even under concurrent form submissions. If no executives exist (e.g., fresh environment) `assignedToId` is null — the service never crashes.
+
+**Alternatives.** (a) True round-robin by index (last assigned + 1) — requires a separate counter row, gives a deterministic sequence but ignores existing backlog. (b) Random assignment — simple but can produce uneven loads by chance. (c) Director assigns manually — the status stays NEW/unassigned and piles up; rejected.
+
+---
