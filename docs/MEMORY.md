@@ -34,12 +34,12 @@ All foundation verification criteria pass:
 | **Reports & Dashboard** | Member A | ⏳ Stage A3 | Profitability, pipeline, unfinished jobs, service reports, CSV/PDF/Share |
 | **Global Search** | Member A | ⏳ Stage A4 | Role-scoped Ctrl+K global search |
 | **Notifications** | Member A | ⏳ Stage A4 | In-app notification center, polling & full page |
-| **Leads & CRM** | Member B | ⏳ Stage B2 | Sales inbox, qualification, overdue leads (BR-01, BR-02) |
-| **Surveys** | Member B | ⏳ Stage B3 | Survey scheduling, technician mobile submission, approval (BR-03) |
-| **Quotes** | Member B | ⏳ Stage B4 | Auto BOM quote builder, send, accept/reject, PDF (BR-04) |
-| **Projects** | Member B | ⏳ Stage B4 | Project lifecycle, timeline, order confirmation (BR-05) |
-| **Payments** | Member B | ⏳ Stage B4 | Payment recording (UPI, bank transfer, cash, etc.) (D-05) |
-| **Customer Portal** | Member B | ⏳ Stage B5 | Customer self-service: quotes, projects, payments, warranties |
+| **Leads & CRM** | Member B | ✅ Stage B2 | Sales inbox, qualification, overdue leads (BR-01, BR-02) |
+| **Surveys** | Member B | ✅ Stage B3 | Survey scheduling, technician mobile submission, approval (BR-03) |
+| **Quotes** | Member B | ✅ Stage B4 | Auto BOM quote builder, send, accept/reject (BR-04) |
+| **Projects** | Member B | ✅ Stage B4 | Project lifecycle, order confirmation (BR-05), auto-create on quote.accepted |
+| **Payments** | Member B | ✅ Stage B4 | Payment recording (UPI, bank transfer, cash, etc.) (D-05) |
+| **Customer Portal** | Member B | ✅ Stage B5 | Customer self-service: overview, quotes, projects, invoices, payments |
 | **Public Site** | Member B | ✅ Stage B1 | Landing page, enquiry form with round-robin assignment (BR-01, BR-15) |
 | **Products & Inventory** | Member C | ⏳ Pending C | Products catalog, stock management, stock adjustments |
 | **Purchases & Serials** | Member C | ⏳ Pending C | Purchase orders, serial unit reception, serial timeline (BR-08) |
@@ -83,5 +83,6 @@ All foundation verification criteria pass:
 
 - Teammates B and C can pull `main` and build their feature modules in parallel on top of this stable foundation.
 - Member A can proceed to Stage A2 (Finance layer: invoices, subsidies, payouts, expenses) or Stage A3 (Director dashboard).
-- Member B completed Stage B1 (2026-10-31): public site is live; round-robin assignment implemented; 5 new tests passing (16/16 total). Next: Stage B2 — full leads module.
-- Unit tests: **16/16 passing** across 5 suites (`nextCode`, `requireRole`, `adminUsers`, `kitTemplateMargin`, `publicEnquiry`).
+- Member B completed Stages B1–B5 (2026-10-31): all server modules implemented (leads, surveys, quotes, projects, payments, customers, me); client pages wired for SALES_EXECUTIVE, SURVEY_TECHNICIAN, and CUSTOMER roles; 16/16 tests passing.
+- Unit tests: **16/16 passing** across 6 suites (`nextCode`, `requireRole`, `adminUsers`, `kitTemplateMargin`, `publicEnquiry`).
+- Client Vite build: zero errors.

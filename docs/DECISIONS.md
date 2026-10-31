@@ -276,3 +276,27 @@ already a CSS variable. Not now.
 **Alternatives.** (a) True round-robin by index (last assigned + 1) — requires a separate counter row, gives a deterministic sequence but ignores existing backlog. (b) Random assignment — simple but can produce uneven loads by chance. (c) Director assigns manually — the status stays NEW/unassigned and piles up; rejected.
 
 ---
+
+## D-15 — Projects created automatically via quote.accepted event
+
+**Date:** 2026-10-31 · **Status:** accepted
+
+**Decision.** When a quote is accepted, the `quote.accepted` event fires and `projects.listeners.js` calls `createProjectFromQuote`. The project row is created inside a transaction with a `PRJ` code from the Counter. The project status starts at `AWAITING_ADVANCE`.
+
+**Why.** Decouples quote acceptance from project creation. Sales executive does not have to manually create the project. The warehouse sees a project the moment the counter is satisfied.
+
+**Alternatives.** (a) Sales executive creates the project manually — requires an extra step and is easy to forget. (b) Inline in `acceptQuote` service — mixes concerns and makes the quote service depend on the project service.
+
+---
+
+## D-16 — Customer account created at quote time, not lead time
+
+**Date:** 2026-10-31 · **Status:** accepted
+
+**Decision.** `createQuote` checks if the lead already has a `customerId`. If not, a `Customer` row is created from the lead's name/phone/email and linked. A `userId` (portal login) is not created here — that is Member A's domain.
+
+**Why.** Creating a Customer at lead time would create accounts for every enquiry, most of which never become orders. Deferring to quote time means every Customer has at least one quote. BR-16 scoping works immediately because `customerId` is set before the quote row is committed.
+
+**Alternatives.** (a) Customer at lead time — clean, but creates many orphan customers. (b) Explicit API call from frontend — leaks business logic to the client.
+
+---

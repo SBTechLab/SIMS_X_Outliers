@@ -28,6 +28,23 @@ import { AuditLogPage } from '@/features/admin/pages/AuditLogPage.jsx';
 import { PlaceholderPage } from '@/features/admin/pages/PlaceholderPage.jsx';
 import { UiGalleryPage } from '@/features/admin/pages/UiGalleryPage.jsx';
 
+// Member B: Sales
+import { LeadsPage } from '@/features/sales/pages/LeadsPage.jsx';
+import { SurveysPage } from '@/features/sales/pages/SurveysPage.jsx';
+import { QuotesPage } from '@/features/sales/pages/QuotesPage.jsx';
+import { ProjectsPage } from '@/features/sales/pages/ProjectsPage.jsx';
+import { PaymentsPage } from '@/features/sales/pages/PaymentsPage.jsx';
+import { CustomersPage } from '@/features/sales/pages/CustomersPage.jsx';
+
+// Member B: Survey technician field
+import { MySurveysPage } from '@/features/survey/pages/MySurveysPage.jsx';
+
+// Member B: Customer portal
+import { PortalOverviewPage } from '@/features/customer-portal/pages/PortalOverviewPage.jsx';
+import { PortalProjectsPage } from '@/features/customer-portal/pages/PortalProjectsPage.jsx';
+import { PortalQuotesPage } from '@/features/customer-portal/pages/PortalQuotesPage.jsx';
+import { PortalInvoicesPage } from '@/features/customer-portal/pages/PortalInvoicesPage.jsx';
+
 /**
  * SHARED FILE (docs/AGENTS.md section 5).
  * Add your routes inside your own member's fence; never rename or delete another member's lines.
@@ -83,19 +100,19 @@ export function AppRoutes() {
         {/* --- Member B: SALES_EXECUTIVE -------------------------------- */}
         <Route element={<RoleRoute roles={['SALES_EXECUTIVE']} />}>
           <Route element={<AppLayout />}>
-            <Route path="/sales/leads" element={<PlaceholderPage breadcrumb={[{ label: 'Sales' }, { label: 'Leads' }]} title="Lead board" subtitle="Every enquiry, kept forever (BR-01). Overdue leads flagged after 24h (BR-02)." module="Leads" owner="Member B" />} />
-            <Route path="/sales/surveys" element={<PlaceholderPage breadcrumb={[{ label: 'Sales' }, { label: 'Surveys' }]} title="Surveys" subtitle="Approve or reject reports before any quote goes out (BR-03)." module="Surveys" owner="Member B" />} />
-            <Route path="/sales/quotes" element={<PlaceholderPage breadcrumb={[{ label: 'Sales' }, { label: 'Quotes' }]} title="Quotes" subtitle="Built from kit templates — the parts list fills itself (BR-04)." module="Quotes" owner="Member B" />} />
-            <Route path="/sales/projects" element={<PlaceholderPage breadcrumb={[{ label: 'Sales' }, { label: 'Projects' }]} title="Projects" subtitle="Confirm when the advance is in (BR-05); the warehouse sees the pick list immediately (BR-06)." module="Projects" owner="Member B" />} />
-            <Route path="/sales/payments" element={<PlaceholderPage breadcrumb={[{ label: 'Sales' }, { label: 'Payments' }]} title="Payments" subtitle="Money is recorded, not processed (D-05)." module="Payments" owner="Member B" />} />
-            <Route path="/sales/customers" element={<PlaceholderPage breadcrumb={[{ label: 'Sales' }, { label: 'Customers' }]} title="Customers" module="Customers" owner="Member B" />} />
+            <Route path="/sales/leads" element={<LeadsPage />} />
+            <Route path="/sales/surveys" element={<SurveysPage />} />
+            <Route path="/sales/quotes" element={<QuotesPage />} />
+            <Route path="/sales/projects" element={<ProjectsPage />} />
+            <Route path="/sales/payments" element={<PaymentsPage />} />
+            <Route path="/sales/customers" element={<CustomersPage />} />
           </Route>
         </Route>
 
         {/* --- Member B: SURVEY_TECHNICIAN ------------------------------ */}
         <Route element={<RoleRoute roles={['SURVEY_TECHNICIAN']} />}>
           <Route element={<FieldLayout title="My surveys" />}>
-            <Route path="/field/surveys" element={<PlaceholderPage title="My surveys" subtitle="Today's assigned roof surveys. Submit the measurement form from your phone." module="Surveys (field)" owner="Member B" />} />
+            <Route path="/field/surveys" element={<MySurveysPage />} />
             <Route path="/field/surveys/upcoming" element={<PlaceholderPage title="Upcoming" subtitle="Surveys scheduled for later in the week." module="Upcoming surveys" owner="Member B" />} />
             <Route path="/field/profile" element={<PlaceholderPage title="Profile" module="Profile" owner="Member A" />} />
           </Route>
@@ -104,10 +121,10 @@ export function AppRoutes() {
         {/* --- Member B: CUSTOMER --------------------------------------- */}
         <Route element={<RoleRoute roles={['CUSTOMER']} />}>
           <Route element={<FieldLayout title="SunPower Solutions" />}>
-            <Route path="/portal" element={<PlaceholderPage title="Overview" subtitle="Your active projects, next step and outstanding balance." module="Customer portal" owner="Member B" />} />
-            <Route path="/portal/projects" element={<PlaceholderPage title="My projects" module="Projects" owner="Member B" />} />
-            <Route path="/portal/quotes" element={<PlaceholderPage title="My quotes" subtitle="Review and accept the quote your sales executive sent." module="Quotes" owner="Member B" />} />
-            <Route path="/portal/invoices" element={<PlaceholderPage title="My invoices" module="Invoices" owner="Member A" />} />
+            <Route path="/portal" element={<PortalOverviewPage />} />
+            <Route path="/portal/projects" element={<PortalProjectsPage />} />
+            <Route path="/portal/quotes" element={<PortalQuotesPage />} />
+            <Route path="/portal/invoices" element={<PortalInvoicesPage />} />
             <Route path="/portal/systems" element={<PlaceholderPage title="My systems" subtitle="Every unit on your rooftop, with its warranty end date (BR-09)." module="Systems" owner="Member C" />} />
             <Route path="/portal/tickets" element={<PlaceholderPage title="Service" subtitle="Raise a ticket, track the fix, confirm when it works (BR-12)." module="Tickets" owner="Member C" />} />
             <Route path="/portal/profile" element={<PlaceholderPage title="Profile" module="Profile" owner="Member A" />} />
