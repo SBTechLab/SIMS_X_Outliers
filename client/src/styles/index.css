@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * The only file in the client allowed to contain raw hex (docs/RULES.md section 10).
+ * Everything else refers to these through the Tailwind token names.
+ */
+:root {
+  --ink: #0f1b2d;
+  --ink-soft: #1e2a3e;
+  --ink-tint: #f1f3f6;
+  --paper: #faf8f3;
+  --surface: #ffffff;
+  --line: #e7e2d8;
+  --muted: #6b7280;
+  --sun: #f59e0b;
+  --sun-deep: #d97706;
+  --amber-soft: #fef3c7;
+  --leaf: #15803d;
+  --leaf-soft: #dcfce7;
+  --sky: #0369a1;
+  --sky-soft: #e0f2fe;
+  --alert: #b91c1c;
+  --alert-soft: #fee2e2;
+
+  --shadow-sm: 0 1px 2px rgba(15, 27, 45, 0.06);
+  --shadow-md: 0 4px 12px rgba(15, 27, 45, 0.1);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-paper text-ink font-sans text-body antialiased;
+  }
+
+  /* Visible focus everywhere. Never outline: none without a replacement (DESIGN.md 10). */
+  :focus-visible {
+    @apply outline-none ring-2 ring-sun ring-offset-2 ring-offset-surface;
+  }
+
+  /* 16px on mobile inputs, or iOS zooms the page on focus. */
+  @media (max-width: 767px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px;
+    }
+  }
+
+  /* Native date and select controls should not carry a different font. */
+  input,
+  select,
+  textarea,
+  button {
+    font-family: inherit;
+  }
+}
+
+@layer components {
+  /* Money and quantity columns. Mandatory on every numeric cell (DESIGN.md 3). */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The skeleton sweep. Becomes a static tint under reduced motion, below. */
+  .skeleton {
+    background-image: linear-gradient(
+      90deg,
+      var(--ink-tint) 0%,
+      #e6e9ee 50%,
+      var(--ink-tint) 100%
+    );
+    background-size: 200% 100%;
+    @apply animate-shimmer rounded-input;
+  }
+
+  /* Tabs and filter rows scroll horizontally on a phone without a visible scrollbar. */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Respect the OS setting: no transform animation, and the shimmer becomes static. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .skeleton {
+    background-image: none;
+    background-color: var(--ink-tint);
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "name": "@sunpower/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node --env-file=.env --watch src/server.js",
+    "start": "node --env-file=.env src/server.js",
+    "seed": "node --env-file=.env prisma/seed.js",
+    "test": "node --env-file=.env --test \"tests/**/*.test.js\"",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:reset": "prisma db push --force-reset",
+    "db:studio": "prisma studio",
+    "lint": "eslint src prisma scripts tests",
+    "smoke": "node --env-file=.env ../server/scripts/smoke.js"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
+  "dependencies": {
+    "@prisma/client": "5.22.0",
+    "bcryptjs": "2.4.3",
+    "body-parser": "^2.4.0",
+    "cookie-parser": "1.4.7",
+    "cors": "2.8.5",
+    "express": "^4.22.3",
+    "express-rate-limit": "7.4.1",
+    "helmet": "8.0.0",
+    "jsonwebtoken": "9.0.2",
+    "multer": "^2.5.0",
+    "node-cron": "3.0.3",
+    "path-to-regexp": "^6.3.0",
+    "pdfkit": "0.15.1",
+    "pino": "9.5.0",
+    "pino-http": "10.3.0",
+    "pino-pretty": "11.3.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "eslint": "9.14.0",
+    "prisma": "5.22.0"
+  }
+}

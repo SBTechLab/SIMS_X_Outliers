@@ -1,0 +1,1238 @@
+// SunPower SIMS — database schema
+//
+// SHARED FILE. Additive changes only (docs/AGENTS.md section 5).
+// Never rename or delete another member's model or field. A breaking change
+// (dropped column, renamed field, changed enum value) is a STOP-AND-ASK.
+//
+// Conventions (docs/DATABASE.md section 5):
+//   ids        cuid()
+//   money      Decimal(12,2), INR only — Prisma.Decimal arithmetic, never JS floats (BR-14)
+//   percent    Decimal(5,2)
+//   capacity   Decimal(6,2) kW
+//   timestamps createdAt + updatedAt on every model, stored UTC, displayed IST
+//   soft delete isActive (BR-15) — nothing a customer or auditor may ask about is hard-deleted
+//
+// Schema is applied with `prisma db push` during the hackathon (D-03); one baseline
+// migration is generated at feature freeze.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+/// LOCKED. Never add, remove, rename or merge a role — stop and ask the user first.
+enum Role {
+  SUPER_ADMIN
+  DIRECTOR
+  SALES_EXECUTIVE
+  SURVEY_TECHNICIAN
+  CUSTOMER
+  WAREHOUSE_MANAGER
+  INSTALLATION_TECHNICIAN
+  SUPPORT_EXECUTIVE
+}
+
+enum CustomerType {
+  RESIDENTIAL
+  COMMERCIAL
+}
+
+enum SystemType {
+  ON_GRID
+  OFF_GRID
+}
+
+/// Leads only — a homeowner may not know which kind they need yet.
+enum RequestedSystemType {
+  ON_GRID
+  OFF_GRID
+  NOT_SURE
+}
+
+enum LeadSource {
+  WEB_FORM
+  WHATSAPP
+  PHONE_CALL
+  WALK_IN
+  REFERRAL
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  NOT_QUALIFIED
+  SURVEY_SCHEDULED
+  SURVEY_DONE
+  SURVEY_APPROVED
+  SURVEY_REJECTED
+  QUOTED
+  WON
+  LOST
+}
+
+enum LeadActivityType {
+  CALL
+  NOTE
+  STATUS_CHANGE
+  WHATSAPP
+  VISIT
+}
+
+enum SurveyStatus {
+  SCHEDULED
+  IN_PROGRESS
+  SUBMITTED
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum RoofType {
+  RCC
+  METAL_SHEET
+  TILED
+  OTHER
+}
+
+enum RoofDirection {
+  N
+  NE
+  E
+  SE
+  S
+  SW
+  W
+  NW
+}
+
+enum AttachmentEntity {
+  SURVEY
+  INSTALLATION
+  TICKET
+  SUBSIDY
+  PURCHASE
+  PROJECT
+}
+
+enum AttachmentKind {
+  PHOTO
+  DOCUMENT
+  SIGNATURE
+}
+
+/// The first four categories are the serialized ones (BR-07).
+enum ProductCategory {
+  PANEL
+  INVERTER
+  BATTERY
+  CHARGE_CONTROLLER
+  MOUNTING_STRUCTURE
+  DC_BOX
+  AC_BOX
+  CABLE
+  EARTHING
+  CONNECTOR
+  ACCESSORY
+  SERVICE
+}
+
+enum ProductUnit {
+  PCS
+  METER
+  SET
+  HOUR
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum ProjectStatus {
+  AWAITING_ADVANCE
+  CONFIRMED
+  PACKING
+  DISPATCHED
+  DELIVERED
+  INSTALLATION_SCHEDULED
+  INSTALLING
+  INSTALLED
+  CLOSED
+  CANCELLED
+}
+
+enum PaymentType {
+  ADVANCE
+  PARTIAL
+  FINAL
+  SERVICE
+}
+
+enum PaymentMode {
+  UPI
+  BANK_TRANSFER
+  CASH
+  CHEQUE
+  CARD
+}
+
+enum SerialStatus {
+  IN_STOCK
+  RESERVED
+  DISPATCHED
+  DELIVERED
+  UNDER_REPAIR
+  REPLACED
+  RETURNED
+  SCRAPPED
+}
+
+enum DispatchStatus {
+  PENDING
+  PACKING
+  READY
+  DISPATCHED
+  DELIVERED
+}
+
+/// Derived in the service from endDate and voidReason — never a stored column (D-11).
+/// Declared here only so the enum name exists for API payloads and the client constants.
+enum WarrantyStatus {
+  ACTIVE
+  EXPIRED
+  VOID
+}
+
+enum InstallationStatus {
+  UNSCHEDULED
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum TimeLogEntity {
+  SURVEY
+  INSTALLATION
+  TICKET
+}
+
+enum TicketSource {
+  PHONE
+  PORTAL
+  WHATSAPP
+  EMAIL
+}
+
+enum TicketCategory {
+  NO_POWER
+  LOW_GENERATION
+  INVERTER_FAULT
+  BATTERY_ISSUE
+  PHYSICAL_DAMAGE
+  OTHER
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TicketStatus {
+  OPEN
+  ASSIGNED
+  IN_PROGRESS
+  AWAITING_PARTS
+  RESOLVED
+  CLOSED
+  REOPENED
+}
+
+enum TicketActivityType {
+  CALL
+  NOTE
+  STATUS_CHANGE
+  VISIT
+}
+
+enum InvoiceType {
+  PROFORMA
+  TAX
+  SERVICE
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PARTIALLY_PAID
+  PAID
+  CANCELLED
+}
+
+enum SubsidyStatus {
+  NOT_STARTED
+  DOCUMENTS_PENDING
+  APPLIED
+  INSPECTION_DONE
+  APPROVED
+  DISBURSED
+  REJECTED
+}
+
+enum ExpenseCategory {
+  TRANSPORT
+  LABOUR_EXTRA
+  CIVIL_WORK
+  MISC
+}
+
+enum PayoutStatus {
+  DRAFT
+  APPROVED
+  PAID
+}
+
+enum ShareLinkType {
+  DIRECTOR_REPORT
+}
+
+// ============================================================================
+// IDENTITY AND PEOPLE
+// ============================================================================
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  /// Nullable for staff (created by email); customers sign in by phone.
+  phone        String?  @unique
+  passwordHash String
+  role         Role
+  /// Soft delete (BR-15) — users are never removed, so history stays readable.
+  isActive     Boolean  @default(true)
+  /// Set for technicians; drives labour cost (BR-13) and payouts.
+  hourlyRate   Decimal? @db.Decimal(10, 2)
+  lastLoginAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  customer           Customer?
+  assignedLeads      Lead[]               @relation("LeadAssignee")
+  leadActivities     LeadActivity[]
+  surveysAssigned    Survey[]             @relation("SurveyTechnician")
+  surveysReviewed    Survey[]             @relation("SurveyReviewer")
+  attachmentsUploaded Attachment[]
+  quotesCreated      Quote[]              @relation("QuoteCreatedBy")
+  quotesAccepted     Quote[]              @relation("QuoteAcceptedBy")
+  paymentsRecorded   Payment[]
+  purchasesCreated   Purchase[]
+  dispatchesPacked   Dispatch[]           @relation("DispatchPackedBy")
+  installationsScheduled InstallationJob[] @relation("InstallationScheduledBy")
+  installationCrews  InstallationCrew[]
+  timeLogs           TimeLog[]
+  ticketsAssigned    Ticket[]             @relation("TicketAssignee")
+  ticketsCreated     Ticket[]             @relation("TicketCreatedBy")
+  ticketActivities   TicketActivity[]
+  expensesCreated    Expense[]
+  payouts            Payout[]
+  notifications      Notification[]
+  auditLogs          AuditLog[]
+  shareLinks         ShareLink[]
+
+  @@index([role])
+  @@index([isActive])
+}
+
+model Customer {
+  id           String       @id @default(cuid())
+  /// Set when the customer gets a login — on quote.sent, or self-signup by phone.
+  userId       String?      @unique
+  name         String
+  phone        String
+  altPhone     String?
+  email        String?
+  addressLine  String?
+  city         String?
+  state        String?
+  pincode      String?
+  customerType CustomerType @default(RESIDENTIAL)
+  notes        String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  user       User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
+  leads      Lead[]
+  quotes     Quote[]
+  projects   Project[]
+  payments   Payment[]
+  warranties Warranty[]
+  tickets    Ticket[]
+  invoices   Invoice[]
+
+  /// Support lookup must answer in milliseconds (US-E1).
+  @@index([phone])
+  @@index([name])
+  @@index([city])
+}
+
+// ============================================================================
+// SALES FUNNEL — Member B
+// ============================================================================
+
+model Lead {
+  id                  String              @id @default(cuid())
+  /// ENQ-2026-0001, from Counter inside the transaction (BR-17).
+  code                String              @unique
+  customerId          String?
+  name                String
+  phone               String
+  email               String?
+  address             String?
+  city                String?
+  pincode             String?
+  source              LeadSource
+  requestedSystemType RequestedSystemType @default(NOT_SURE)
+  requestedCapacityKw Decimal?            @db.Decimal(6, 2)
+  wantsSubsidy        Boolean             @default(false)
+  status              LeadStatus          @default(NEW)
+  assignedToId        String?
+  /// Duplicate phone numbers are flagged and linked, never rejected (BR-01).
+  duplicateOfId       String?
+  /// Null for more than 24h means overdue (BR-02).
+  firstContactedAt    DateTime?
+  lostReason          String?
+  roofAreaSqft        Int?
+  monthlyBillInr      Decimal?            @db.Decimal(10, 2)
+  gridConnectionOk    Boolean?
+  sanctionedLoadKw    Decimal?            @db.Decimal(6, 2)
+  qualificationNotes  String?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  customer         Customer?      @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  assignedTo       User?          @relation("LeadAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  duplicateOf      Lead?          @relation("LeadDuplicate", fields: [duplicateOfId], references: [id], onDelete: SetNull)
+  linkedDuplicates Lead[]         @relation("LeadDuplicate")
+  activities       LeadActivity[]
+  surveys          Survey[]
+  quotes           Quote[]
+
+  /// Duplicate detection runs on every enquiry (BR-01).
+  @@index([phone])
+  @@index([status])
+  @@index([assignedToId])
+  @@index([customerId])
+  @@index([createdAt])
+}
+
+model LeadActivity {
+  id        String           @id @default(cuid())
+  leadId    String
+  userId    String?
+  type      LeadActivityType
+  message   String
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  lead Lead  @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([leadId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Survey {
+  id                     String        @id @default(cuid())
+  leadId                 String
+  technicianId           String
+  scheduledAt            DateTime
+  status                 SurveyStatus  @default(SCHEDULED)
+  roofType               RoofType?
+  shadowFreeAreaSqft     Int?
+  roofDirection          RoofDirection?
+  tiltDegrees            Int?
+  cableDistanceMeters    Int?
+  structureHeightFt      Int?
+  earthingPointAvailable Boolean?
+  recommendedCapacityKw  Decimal?      @db.Decimal(6, 2)
+  recommendedSystemType  SystemType?
+  notes                  String?
+  submittedAt            DateTime?
+  reviewedById           String?
+  reviewedAt             DateTime?
+  rejectionReason        String?
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+
+  lead       Lead  @relation(fields: [leadId], references: [id], onDelete: Restrict)
+  technician User  @relation("SurveyTechnician", fields: [technicianId], references: [id], onDelete: Restrict)
+  reviewedBy User? @relation("SurveyReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([leadId])
+  @@index([status])
+  /// "My surveys today" on a phone.
+  @@index([technicianId, scheduledAt])
+}
+
+/// Polymorphic file record. No DB-level FK, so the service must validate the target exists.
+model Attachment {
+  id           String           @id @default(cuid())
+  entityType   AttachmentEntity
+  entityId     String
+  fileUrl      String
+  fileName     String
+  mimeType     String
+  sizeBytes    Int
+  kind         AttachmentKind   @default(PHOTO)
+  uploadedById String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  uploadedBy User? @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  /// BR-10 counts PHOTO rows for an installation through this index.
+  @@index([entityType, entityId])
+  @@index([kind])
+}
+
+// ============================================================================
+// CATALOGUE AND KITS — Member C (products), Member A (kit templates)
+// ============================================================================
+
+model Product {
+  id            String          @id @default(cuid())
+  sku           String          @unique
+  name          String
+  category      ProductCategory
+  brand         String?
+  /// Open shape: a 540 Wp bifacial panel and a 5 kVA hybrid inverter carry different fields.
+  specs         Json?
+  unit          ProductUnit     @default(PCS)
+  /// Panels, inverters, batteries and charge controllers are serialized (BR-07).
+  isSerialized  Boolean         @default(false)
+  /// The single source of warranty duration (BR-09). Panel 240, inverter/battery/CC 24.
+  warrantyMonths Int            @default(12)
+  costPrice     Decimal         @db.Decimal(12, 2)
+  sellPrice     Decimal         @db.Decimal(12, 2)
+  taxPercent    Decimal         @default(18) @db.Decimal(5, 2)
+  reorderLevel  Int             @default(0)
+  /// Non-serialized stock only; serialized stock is counted from SerialUnit.
+  stockQty      Int             @default(0)
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  kitItems      KitTemplateItem[]
+  quoteItems    QuoteItem[]
+  purchaseItems PurchaseItem[]
+  serialUnits   SerialUnit[]
+  dispatchLines DispatchLine[]
+  ticketParts   TicketPart[]
+
+  @@index([category])
+  @@index([name])
+  @@index([isSerialized])
+  @@index([isActive])
+}
+
+model KitTemplate {
+  id          String     @id @default(cuid())
+  name        String
+  systemType  SystemType
+  capacityKw  Decimal    @db.Decimal(6, 2)
+  description String?
+  basePrice   Decimal    @db.Decimal(12, 2)
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  items  KitTemplateItem[]
+  quotes Quote[]
+
+  @@index([systemType])
+  @@index([isActive])
+}
+
+/// The bill of materials that makes BR-04 work — nothing is forgotten by default.
+model KitTemplateItem {
+  id            String   @id @default(cuid())
+  kitTemplateId String
+  productId     String
+  quantity      Decimal  @db.Decimal(10, 2)
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  kitTemplate KitTemplate @relation(fields: [kitTemplateId], references: [id], onDelete: Cascade)
+  product     Product     @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@unique([kitTemplateId, productId])
+  @@index([kitTemplateId])
+  @@index([productId])
+}
+
+// ============================================================================
+// QUOTES, PROJECTS, MONEY IN — Member B
+// ============================================================================
+
+model Quote {
+  id            String      @id @default(cuid())
+  /// QT-2026-0001 (BR-17).
+  number        String      @unique
+  leadId        String
+  customerId    String
+  kitTemplateId String?
+  status        QuoteStatus @default(DRAFT)
+  systemType    SystemType
+  capacityKw    Decimal     @db.Decimal(6, 2)
+  /// Stored, not recomputed — a later price change must not rewrite history.
+  subtotal      Decimal     @default(0) @db.Decimal(12, 2)
+  discount      Decimal     @default(0) @db.Decimal(12, 2)
+  taxTotal      Decimal     @default(0) @db.Decimal(12, 2)
+  total         Decimal     @default(0) @db.Decimal(12, 2)
+  validUntil    DateTime
+  notes         String?
+  sentAt        DateTime?
+  acceptedAt    DateTime?
+  acceptedById  String?
+  createdById   String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  lead        Lead         @relation(fields: [leadId], references: [id], onDelete: Restrict)
+  customer    Customer     @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  kitTemplate KitTemplate? @relation(fields: [kitTemplateId], references: [id], onDelete: SetNull)
+  acceptedBy  User?        @relation("QuoteAcceptedBy", fields: [acceptedById], references: [id], onDelete: SetNull)
+  createdBy   User         @relation("QuoteCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  items       QuoteItem[]
+  project     Project?
+
+  @@index([leadId])
+  @@index([customerId])
+  @@index([status])
+  /// The nightly expiry job.
+  @@index([validUntil])
+}
+
+model QuoteItem {
+  id          String   @id @default(cuid())
+  quoteId     String
+  productId   String
+  description String
+  quantity    Decimal  @db.Decimal(10, 2)
+  /// Copied from the product at creation time — the quote must not change when the catalogue does.
+  unitPrice   Decimal  @db.Decimal(12, 2)
+  taxPercent  Decimal  @db.Decimal(5, 2)
+  lineTotal   Decimal  @db.Decimal(12, 2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  quote   Quote   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([quoteId])
+  @@index([productId])
+}
+
+model Project {
+  id              String        @id @default(cuid())
+  /// PRJ-2026-0001 (BR-17).
+  code            String        @unique
+  customerId      String
+  /// One project per accepted quote.
+  quoteId         String        @unique
+  status          ProjectStatus @default(AWAITING_ADVANCE)
+  systemType      SystemType
+  capacityKw      Decimal       @db.Decimal(6, 2)
+  siteAddress     String
+  /// Milestone timestamps — a null one is how the unfinished report finds a stuck project.
+  confirmedAt     DateTime?
+  deliveredAt     DateTime?
+  installedAt     DateTime?
+  closedAt        DateTime?
+  subsidyEligible Boolean       @default(false)
+  cancelReason    String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  customer     Customer            @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  quote        Quote               @relation(fields: [quoteId], references: [id], onDelete: Restrict)
+  payments     Payment[]
+  serialUnits  SerialUnit[]
+  dispatch     Dispatch?
+  warranties   Warranty[]
+  installation InstallationJob?
+  tickets      Ticket[]
+  invoices     Invoice[]
+  subsidy      SubsidyApplication?
+  expenses     Expense[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([confirmedAt])
+  @@index([createdAt])
+}
+
+/// Money is recorded, not processed (D-05).
+model Payment {
+  id           String      @id @default(cuid())
+  projectId    String?
+  invoiceId    String?
+  customerId   String
+  amount       Decimal     @db.Decimal(12, 2)
+  type         PaymentType
+  mode         PaymentMode
+  reference    String?
+  receivedAt   DateTime
+  recordedById String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  project    Project?  @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  invoice    Invoice?  @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  recordedBy User      @relation(fields: [recordedById], references: [id], onDelete: Restrict)
+
+  /// The advance check sums by project (BR-05); the invoice listener sums by invoice.
+  @@index([projectId])
+  @@index([invoiceId])
+  @@index([customerId])
+  @@index([receivedAt])
+}
+
+// ============================================================================
+// PROCUREMENT AND STOCK — Member C
+// ============================================================================
+
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  gstin     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  purchases Purchase[]
+
+  @@index([name])
+}
+
+model Purchase {
+  id          String   @id @default(cuid())
+  number      String   @unique
+  supplierId  String
+  invoiceRef  String?
+  purchasedAt DateTime
+  total       Decimal  @default(0) @db.Decimal(12, 2)
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  supplier  Supplier       @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  createdBy User           @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  items     PurchaseItem[]
+
+  @@index([supplierId])
+  @@index([purchasedAt])
+}
+
+model PurchaseItem {
+  id         String   @id @default(cuid())
+  purchaseId String
+  productId  String
+  quantity   Decimal  @db.Decimal(10, 2)
+  /// The true landed cost — material cost for non-serialized items (BR-13).
+  unitCost   Decimal  @db.Decimal(12, 2)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  purchase    Purchase     @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  product     Product      @relation(fields: [productId], references: [id], onDelete: Restrict)
+  serialUnits SerialUnit[]
+
+  @@index([purchaseId])
+  @@index([productId])
+}
+
+/// One physical panel, inverter, battery or charge controller.
+/// The model the whole warranty story rests on.
+model SerialUnit {
+  id             String       @id @default(cuid())
+  /// Unique company-wide — the core of BR-08.
+  serialNumber   String       @unique
+  productId      String
+  purchaseItemId String?
+  /// This unit's own cost, so profit is exact rather than averaged (BR-13).
+  unitCost       Decimal      @db.Decimal(12, 2)
+  status         SerialStatus @default(IN_STOCK)
+  /// Set at scan time. A serial belongs to one project only (BR-08).
+  projectId      String?
+  dispatchId     String?
+  /// Self-link for a warranty replacement, so D-07 stays traceable.
+  replacedById   String?
+  notes          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  product      Product       @relation(fields: [productId], references: [id], onDelete: Restrict)
+  purchaseItem PurchaseItem? @relation(fields: [purchaseItemId], references: [id], onDelete: SetNull)
+  project      Project?      @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  dispatch     Dispatch?     @relation(fields: [dispatchId], references: [id], onDelete: SetNull)
+  replacedBy   SerialUnit?   @relation("SerialReplacement", fields: [replacedById], references: [id], onDelete: SetNull)
+  replaces     SerialUnit[]  @relation("SerialReplacement")
+  warranty     Warranty?
+  tickets      Ticket[]
+  partsOld     TicketPart[]  @relation("TicketPartOldSerial")
+  partsNew     TicketPart[]  @relation("TicketPartNewSerial")
+
+  /// The scan path (BR-07, BR-08) and the support lookup must be instant.
+  @@index([productId])
+  @@index([status])
+  @@index([projectId])
+  @@index([dispatchId])
+}
+
+// ============================================================================
+// DISPATCH AND WARRANTY — Member C
+// ============================================================================
+
+model Dispatch {
+  id             String         @id @default(cuid())
+  /// DSP-2026-0001 (BR-17).
+  number         String         @unique
+  /// One delivery record per project.
+  projectId      String         @unique
+  status         DispatchStatus @default(PENDING)
+  packedById     String?
+  vehicleNo      String?
+  driverName     String?
+  driverPhone    String?
+  dispatchedAt   DateTime?
+  deliveredAt    DateTime?
+  receivedByName String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  project     Project        @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  packedBy    User?          @relation("DispatchPackedBy", fields: [packedById], references: [id], onDelete: SetNull)
+  lines       DispatchLine[]
+  serialUnits SerialUnit[]
+
+  @@index([status])
+}
+
+/// The pick list. BR-07 is the comparison of requiredQty against scannedQty and packedQty.
+model DispatchLine {
+  id          String   @id @default(cuid())
+  dispatchId  String
+  productId   String
+  requiredQty Decimal  @db.Decimal(10, 2)
+  /// Serialized lines: counts serials actually scanned.
+  scannedQty  Decimal  @default(0) @db.Decimal(10, 2)
+  /// Non-serialized lines: counts units confirmed packed.
+  packedQty   Decimal  @default(0) @db.Decimal(10, 2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  dispatch Dispatch @relation(fields: [dispatchId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@unique([dispatchId, productId])
+  @@index([dispatchId])
+  @@index([productId])
+}
+
+/// One row per delivered serial, written inside the delivery transaction (BR-09).
+/// status is DERIVED in the service from endDate and voidReason — never stored (D-11).
+model Warranty {
+  id           String    @id @default(cuid())
+  serialUnitId String    @unique
+  customerId   String
+  projectId    String
+  startDate    DateTime
+  /// startDate + product.warrantyMonths. Duration always comes from the product.
+  endDate      DateTime
+  voidReason   String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  serialUnit SerialUnit @relation(fields: [serialUnitId], references: [id], onDelete: Restrict)
+  customer   Customer   @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  project    Project    @relation(fields: [projectId], references: [id], onDelete: Restrict)
+
+  @@index([customerId])
+  @@index([projectId])
+  /// "My systems" in the portal and the expiring-soon alert job.
+  @@index([endDate])
+}
+
+// ============================================================================
+// INSTALLATION AND LABOUR — Member C
+// ============================================================================
+
+model InstallationJob {
+  id                   String             @id @default(cuid())
+  /// One install job per project.
+  projectId            String             @unique
+  status               InstallationStatus @default(UNSCHEDULED)
+  scheduledDate        DateTime?
+  scheduledById        String?
+  startedAt            DateTime?
+  finishedAt           DateTime?
+  /// BR-10 completion proof below.
+  confirmedCapacityKw  Decimal?           @db.Decimal(6, 2)
+  generationTestKw     Decimal?           @db.Decimal(6, 2)
+  checklist            Json?
+  customerSignatureUrl String?
+  signedByName         String?
+  signedAt             DateTime?
+  remarks              String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  project     Project            @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  scheduledBy User?              @relation("InstallationScheduledBy", fields: [scheduledById], references: [id], onDelete: SetNull)
+  crew        InstallationCrew[]
+
+  @@index([status])
+  @@index([scheduledDate])
+}
+
+model InstallationCrew {
+  id           String   @id @default(cuid())
+  jobId        String
+  technicianId String
+  /// Exactly one true per job (BR: 422 INVALID_CREW otherwise).
+  isLead       Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  job        InstallationJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  technician User            @relation(fields: [technicianId], references: [id], onDelete: Restrict)
+
+  @@unique([jobId, technicianId])
+  @@index([jobId])
+  /// "My jobs" ownership check (BR-16).
+  @@index([technicianId])
+}
+
+/// minutes is stored as an integer rather than re-derived, so a corrected
+/// timestamp cannot silently change a past payout.
+model TimeLog {
+  id           String        @id @default(cuid())
+  technicianId String
+  entityType   TimeLogEntity
+  entityId     String
+  startedAt    DateTime
+  endedAt      DateTime?
+  minutes      Int           @default(0)
+  /// Gates the row into payouts and into labour cost (BR-13).
+  approved     Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  technician User @relation(fields: [technicianId], references: [id], onDelete: Restrict)
+
+  @@index([technicianId, startedAt])
+  @@index([entityType, entityId])
+  @@index([approved])
+}
+
+// ============================================================================
+// SERVICE — Member C
+// ============================================================================
+
+model Ticket {
+  id                  String         @id @default(cuid())
+  /// TKT-2026-0001 (BR-17).
+  number              String         @unique
+  customerId          String
+  projectId           String?
+  /// The link that makes "which inverter?" answerable.
+  serialUnitId        String?
+  source              TicketSource
+  category            TicketCategory
+  faultCode           String?
+  description         String
+  priority            TicketPriority @default(MEDIUM)
+  status              TicketStatus   @default(OPEN)
+  /// Resolved at creation from the warranty and then frozen, so a ticket opened
+  /// one day before expiry stays free (BR-11).
+  isUnderWarranty     Boolean?
+  isChargeable        Boolean?
+  assignedToId        String?
+  createdById         String?
+  resolutionNote      String?
+  resolvedAt          DateTime?
+  /// BR-12 — a ticket closes only after the customer confirms.
+  customerConfirmedAt DateTime?
+  confirmationNote    String?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  customer   Customer         @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  project    Project?         @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  serialUnit SerialUnit?      @relation(fields: [serialUnitId], references: [id], onDelete: Restrict)
+  assignedTo User?            @relation("TicketAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  createdBy  User?            @relation("TicketCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  activities TicketActivity[]
+  parts      TicketPart[]
+  invoices   Invoice[]
+  expenses   Expense[]
+
+  @@index([customerId])
+  @@index([projectId])
+  @@index([serialUnitId])
+  @@index([status])
+  @@index([assignedToId])
+  @@index([createdAt])
+}
+
+model TicketActivity {
+  id        String             @id @default(cuid())
+  ticketId  String
+  userId    String?
+  type      TicketActivityType
+  message   String
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId])
+  @@index([createdAt])
+}
+
+/// Stores BOTH unitPrice (billed) and unitCost (ours), because the same row serves
+/// a service invoice when chargeable and a warranty expense when free (BR-11, BR-13).
+model TicketPart {
+  id          String   @id @default(cuid())
+  ticketId    String
+  productId   String
+  quantity    Decimal  @db.Decimal(10, 2)
+  unitPrice   Decimal  @db.Decimal(12, 2)
+  unitCost    Decimal  @db.Decimal(12, 2)
+  oldSerialId String?
+  newSerialId String?
+  labourHours Decimal? @db.Decimal(6, 2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ticket    Ticket      @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  product   Product     @relation(fields: [productId], references: [id], onDelete: Restrict)
+  oldSerial SerialUnit? @relation("TicketPartOldSerial", fields: [oldSerialId], references: [id], onDelete: SetNull)
+  newSerial SerialUnit? @relation("TicketPartNewSerial", fields: [newSerialId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId])
+  @@index([productId])
+}
+
+// ============================================================================
+// FINANCE AND GOVERNANCE — Member A
+// ============================================================================
+
+model Invoice {
+  id         String        @id @default(cuid())
+  /// INV-2026-0001 (BR-17).
+  number     String        @unique
+  customerId String
+  projectId  String?
+  ticketId   String?
+  type       InvoiceType
+  status     InvoiceStatus @default(DRAFT)
+  issueDate  DateTime
+  dueDate    DateTime?
+  subtotal   Decimal       @default(0) @db.Decimal(12, 2)
+  taxTotal   Decimal       @default(0) @db.Decimal(12, 2)
+  total      Decimal       @default(0) @db.Decimal(12, 2)
+  /// Maintained by the payment.recorded listener.
+  amountPaid Decimal       @default(0) @db.Decimal(12, 2)
+  notes      String?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  customer Customer      @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  project  Project?      @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  ticket   Ticket?       @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  lines    InvoiceLine[]
+  payments Payment[]
+
+  @@index([customerId])
+  @@index([projectId])
+  @@index([ticketId])
+  @@index([status])
+  @@index([issueDate])
+}
+
+/// Stored text, not a join, so a reprint years later is identical.
+model InvoiceLine {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  description String
+  quantity    Decimal  @db.Decimal(10, 2)
+  unitPrice   Decimal  @db.Decimal(12, 2)
+  taxPercent  Decimal  @db.Decimal(5, 2)
+  lineTotal   Decimal  @db.Decimal(12, 2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+model SubsidyApplication {
+  id             String        @id @default(cuid())
+  projectId      String        @unique
+  scheme         String
+  status         SubsidyStatus @default(NOT_STARTED)
+  applicationRef String?
+  appliedAt      DateTime?
+  inspectionAt   DateTime?
+  approvedAt     DateTime?
+  disbursedAt    DateTime?
+  amountExpected Decimal?      @db.Decimal(12, 2)
+  amountReceived Decimal?      @db.Decimal(12, 2)
+  remarks        String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Restrict)
+
+  @@index([status])
+}
+
+/// The third term of BR-13.
+model Expense {
+  id          String          @id @default(cuid())
+  projectId   String?
+  ticketId    String?
+  category    ExpenseCategory
+  amount      Decimal         @db.Decimal(12, 2)
+  description String
+  spentAt     DateTime
+  createdById String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  ticket    Ticket?  @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  createdBy User     @relation(fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([projectId])
+  @@index([ticketId])
+  @@index([spentAt])
+}
+
+/// hourlyRate is stored on the row so a later rate change cannot rewrite a past payout.
+model Payout {
+  id           String       @id @default(cuid())
+  technicianId String
+  periodStart  DateTime
+  periodEnd    DateTime
+  totalMinutes Int          @default(0)
+  hourlyRate   Decimal      @db.Decimal(10, 2)
+  incentive    Decimal      @default(0) @db.Decimal(12, 2)
+  amount       Decimal      @db.Decimal(12, 2)
+  status       PayoutStatus @default(DRAFT)
+  paidAt       DateTime?
+  reference    String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  technician User @relation(fields: [technicianId], references: [id], onDelete: Restrict)
+
+  @@unique([technicianId, periodStart, periodEnd])
+  @@index([technicianId])
+  @@index([status])
+  @@index([periodStart])
+}
+
+/// Why no rate is ever hard-coded (BR-14). Keys in docs/DATABASE.md section 6.
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// The stand-in for SMS and WhatsApp, which are out of scope.
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  body      String?
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// The unread badge on every page load.
+  @@index([userId, isRead])
+  @@index([createdAt])
+}
+
+/// Append-only. Written for every sensitive action (BR-18). No update or delete endpoint.
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  /// Changed fields only — never a whole row, never a passwordHash.
+  before     Json?
+  after      Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+/// Read-only access to a director report with no login, with an expiry (US-F5).
+model ShareLink {
+  id          String        @id @default(cuid())
+  token       String        @unique
+  type        ShareLinkType @default(DIRECTOR_REPORT)
+  params      Json?
+  expiresAt   DateTime
+  createdById String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  createdBy User @relation(fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([expiresAt])
+}
+
+/// Source of ENQ/QT/PRJ/DSP/TKT/INV numbers. Incremented inside the same
+/// transaction as the row it names (BR-17), so numbers never collide or skip.
+model Counter {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
