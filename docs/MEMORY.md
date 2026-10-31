@@ -33,7 +33,7 @@ All foundation verification criteria pass:
 | **Payouts** | Member A | ✅ Stage A2 | Technician approved hours aggregation and payout generation (DRAFT→APPROVED→PAID) |
 | **Reports & Dashboard** | Member A | ✅ Stage A3 | Director overview, profitability (BR-13), pipeline, unfinished jobs, service reports |
 | **Global Search** | Member A | ✅ Stage A4 | Role-scoped global search (server + client wired) |
-| **Notifications** | Member A | ⏳ Stage A4 | In-app notification center UI (server-side notify.js complete; client UI pending) |
+| **Notifications** | Member A | ✅ Stage A4 | NotificationBell (dropdown + polling), NotificationsPage full list with read/unread filter |
 | **Leads & CRM** | Member B | ✅ Stage B2 | Sales inbox, qualification, overdue leads (BR-01, BR-02) |
 | **Surveys** | Member B | ✅ Stage B3 | Survey scheduling, technician mobile submission, approval (BR-03) |
 | **Quotes** | Member B | ✅ Stage B4 | Auto BOM quote builder, send, accept/reject (BR-04) |
@@ -86,4 +86,4 @@ All foundation verification criteria pass:
 - Member B completed Stages B1–B5 (2026-10-31): all server modules implemented (leads, surveys, quotes, projects, payments, customers, me); client pages wired for SALES_EXECUTIVE, SURVEY_TECHNICIAN, and CUSTOMER roles.
 - Unit tests: **16/16 passing** across 6 suites (`nextCode`, `requireRole`, `adminUsers`, `kitTemplateMargin`, `publicEnquiry`).
 - Client Vite build: zero errors.
-- Member A remaining: notifications UI (Stage A4 client), `/director/profitability/:id` detail page.
+- Member A Stages A1–A4 are 100% complete (2026-10-31): Super Admin panel, Finance layer, Director dashboard/reports, Global search + notifications UI.

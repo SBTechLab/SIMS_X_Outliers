@@ -66,7 +66,7 @@ export function SubsidiesPage() {
   const [page, setPage] = useState(1);
 
   const { data, isLoading, isError, error, refetch } = useSubsidies({ status: status || undefined, page });
-  const rows = data?.data ?? [];
+  const rows = Array.isArray(data) ? data : [];
   const meta = data?.meta;
 
   const filters = [

@@ -74,7 +74,7 @@ export function InvoicesPage() {
   };
 
   const { data, isLoading, isError, error, refetch } = useInvoices(params);
-  const rows = data?.data ?? [];
+  const rows = Array.isArray(data) ? data : [];
   const meta = data?.meta;
 
   const filters = [

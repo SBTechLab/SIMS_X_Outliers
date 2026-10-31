@@ -63,7 +63,7 @@ export function PayoutsPage() {
   const approvePayout = useApprovePayout();
   const markPaid = useMarkPayoutPaid();
 
-  const rows = data?.data ?? [];
+  const rows = Array.isArray(data) ? data : [];
 
   const filters = [
     { type: 'select', id: 'status', label: 'Status', value: status, onChange: setStatus, options: STATUS_OPTIONS },

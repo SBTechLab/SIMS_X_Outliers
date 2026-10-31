@@ -116,6 +116,15 @@ export function NotificationBell() {
                 ))
               )}
             </ul>
+            <div className="border-t border-line px-4 py-2.5">
+              <button
+                type="button"
+                onClick={() => { navigate('/notifications'); setOpen(false); }}
+                className="text-small text-sun hover:underline"
+              >
+                View all notifications
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

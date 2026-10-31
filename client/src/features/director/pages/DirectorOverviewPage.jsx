@@ -42,7 +42,7 @@ export function DirectorOverviewPage() {
     </div>
   );
 
-  const d = data?.data ?? {};
+  const d = data ?? {};
 
   return (
     <div className="flex flex-col gap-6">

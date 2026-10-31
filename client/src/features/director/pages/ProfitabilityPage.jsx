@@ -82,7 +82,7 @@ export function ProfitabilityPage() {
   const [page, setPage] = useState(1);
 
   const { data, isLoading, isError, error, refetch } = useProfitability({ status: status || undefined, page, pageSize: 20 });
-  const rows = data?.data ?? [];
+  const rows = Array.isArray(data) ? data : [];
   const meta = data?.meta;
 
   const filters = [

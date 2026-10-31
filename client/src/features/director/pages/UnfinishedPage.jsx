@@ -15,7 +15,7 @@ export function UnfinishedPage() {
     </div>
   );
 
-  const d = data?.data ?? {};
+  const d = data ?? {};
   const stalledProjects = d.stalledProjects ?? [];
   const overdueLeads = d.overdueLeads ?? [];
   const openTickets = d.openTickets ?? [];

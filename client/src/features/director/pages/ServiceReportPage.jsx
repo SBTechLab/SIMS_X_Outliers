@@ -14,7 +14,7 @@ export function ServiceReportPage() {
     </div>
   );
 
-  const d = data?.data ?? {};
+  const d = data ?? {};
   const byCategory = d.byCategory ?? [];
   const avgHours = d.avgResolution?.[0]?.avg_hours;
 

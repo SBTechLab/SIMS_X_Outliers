@@ -48,12 +48,16 @@ import { PortalInvoicesPage } from '@/features/customer-portal/pages/PortalInvoi
 // Member A: Director (Stages A2-A3)
 import { DirectorOverviewPage } from '@/features/director/pages/DirectorOverviewPage.jsx';
 import { ProfitabilityPage } from '@/features/director/pages/ProfitabilityPage.jsx';
+import { ProjectProfitPage } from '@/features/director/pages/ProjectProfitPage.jsx';
 import { InvoicesPage } from '@/features/director/pages/InvoicesPage.jsx';
 import { SubsidiesPage } from '@/features/director/pages/SubsidiesPage.jsx';
 import { ExpensesPage } from '@/features/director/pages/ExpensesPage.jsx';
 import { PayoutsPage } from '@/features/director/pages/PayoutsPage.jsx';
 import { UnfinishedPage } from '@/features/director/pages/UnfinishedPage.jsx';
 import { ServiceReportPage } from '@/features/director/pages/ServiceReportPage.jsx';
+
+// Member A: Notifications (Stage A4)
+import { NotificationsPage } from '@/features/notifications/NotificationsPage.jsx';
 
 /**
  * SHARED FILE (docs/AGENTS.md section 5).
@@ -98,6 +102,7 @@ export function AppRoutes() {
           <Route element={<AppLayout />}>
             <Route path="/director" element={<DirectorOverviewPage />} />
             <Route path="/director/profitability" element={<ProfitabilityPage />} />
+            <Route path="/director/profitability/:id" element={<ProjectProfitPage />} />
             <Route path="/director/unfinished" element={<UnfinishedPage />} />
             <Route path="/director/service" element={<ServiceReportPage />} />
             <Route path="/director/invoices" element={<InvoicesPage />} />
@@ -105,6 +110,11 @@ export function AppRoutes() {
             <Route path="/director/expenses" element={<ExpensesPage />} />
             <Route path="/director/payouts" element={<PayoutsPage />} />
           </Route>
+        </Route>
+
+        {/* --- Notifications — all staff roles -------------------------- */}
+        <Route element={<AppLayout />}>
+          <Route path="/notifications" element={<NotificationsPage />} />
         </Route>
 
         {/* --- Member B: SALES_EXECUTIVE -------------------------------- */}

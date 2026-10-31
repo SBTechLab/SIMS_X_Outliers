@@ -68,7 +68,7 @@ export function ExpensesPage() {
 
   const { data, isLoading, isError, error, refetch } = useExpenses({ category: category || undefined, page });
   const createExpense = useCreateExpense();
-  const rows = data?.data ?? [];
+  const rows = Array.isArray(data) ? data : [];
   const meta = data?.meta;
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm({
